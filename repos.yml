@@ -23,5 +23,8 @@ repos:
     path: /Users/pcarphin/go/src/gitlab.com/philippecarphin/go-snippets
     shortname: t
     fetch: false
+
   repo-manager:
     path: /Users/pcarphin/Documents/GitHub/repo-manager
+    shortname: t
+    fetch: false

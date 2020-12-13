@@ -71,11 +71,8 @@ func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 
 func (r *repoConfig) hasUnstagedChanges() bool {
 	cmd := r.gitCommand("diff", "--no-ext-diff", "--quiet", "--exit-code")
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
-	}
-	return cmd.ProcessState.Success()
+	cmd.Run()
+	return ! cmd.ProcessState.Success()
 }
 
 func (r *repoConfig) hasUntrackedFiles() bool {
@@ -142,7 +139,7 @@ func readDatabase(filename string) []*repoInfo {
 	}
 	yaml.Unmarshal(yml, &repoFile)
 
-	database := make([]*repoInfo, 0, len(repoFile.Repos))
+	database := make([]*repoInfo, 0, len(repoFile.Repos)+8)
 	for name, rp := range repoFile.Repos {
 		rp.Name = name
 		ri := repoInfo{
