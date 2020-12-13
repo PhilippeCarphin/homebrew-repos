@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"time"
 
 	"os"
 	"os/exec"
@@ -11,15 +13,40 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// RepoFile sucks
+type RepoFile struct {
+	Repos map[string]repoConfig
+	Config config
+}
+type args struct {
+	command        string
+	path           string
+	name           string
+	generateConfig bool
+}
+
+func getArgs() args {
+
+	var a args
+
+	a.command = flag.Arg(0)
+	flag.StringVar(&a.path, "path", "/a/path/", "Path of repo")
+	flag.BoolVar(&a.generateConfig, "generate-config", false, "")
+	flag.Parse()
+
+	return a
+}
+
 type config struct {
-	color    bool
-	defaults repoConfig
+	Color    bool
+	Defaults repoConfig
 }
 
 type repoConfig struct {
 	Path      string
 	Name      string
 	ShortName string
+	Fetch bool
 }
 
 type repoInfo struct {
@@ -28,10 +55,9 @@ type repoInfo struct {
 }
 
 type repoState struct {
-	Dirty          bool
-	UntrackedFiles bool
-	// TODO Transform to proper date time type
-	TimeSinceLastCommit string
+	Dirty               bool
+	UntrackedFiles      bool
+	TimeSinceLastCommit time.Time
 }
 
 type repos []repoConfig
@@ -45,7 +71,10 @@ func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 
 func (r *repoConfig) hasUnstagedChanges() bool {
 	cmd := r.gitCommand("diff", "--no-ext-diff", "--quiet", "--exit-code")
-	cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		panic(err)
+	}
 	return cmd.ProcessState.Success()
 }
 
@@ -76,6 +105,13 @@ func generateConfig(filename string) {
 	repoFile := RepoFile{
 		Repos: map[string]repoConfig{
 			"MyRepo": {},
+			"MyOtherRepo": {},
+		},
+		Config: config {
+			Color: true,
+			Defaults: repoConfig {
+				Fetch: true,
+			},
 		},
 	}
 	yamlOut, err := yaml.Marshal(&repoFile)
@@ -85,21 +121,17 @@ func generateConfig(filename string) {
 	ioutil.WriteFile(filename, yamlOut, 0644)
 }
 
-func (r repoConfig) getTimeSinceLastCommit() string {
-	cmd := r.gitCommand("log", "--pretty=format:'%at'", "-1")
+func (r repoConfig) getTimeSinceLastCommit() time.Time {
+	cmd := r.gitCommand("log", "--pretty=format:%at", "-1")
 	out, err := cmd.Output()
 	if err != nil {
 		panic(err)
 	}
-	var timestamp int
+	var timestamp int64
 	fmt.Sscanf(string(out), "%d", &timestamp)
-	return string(out)
+	return time.Unix(timestamp, 0)
 }
 
-// RepoFile sucks
-type RepoFile struct {
-	Repos map[string]repoConfig
-}
 
 func readDatabase(filename string) []*repoInfo {
 	repoFile := RepoFile{}
@@ -121,25 +153,21 @@ func readDatabase(filename string) []*repoInfo {
 	return database
 }
 
-func addRepoState(database []*repoInfo) {
-	for _, ri := range database {
-		ri.State = repoState{
-			Dirty:               ri.Config.hasUnstagedChanges(),
-			UntrackedFiles:      ri.Config.hasUntrackedFiles(),
-			TimeSinceLastCommit: ri.Config.getTimeSinceLastCommit(),
-		}
+func (r repoConfig) getState() repoState {
+	return repoState{
+		Dirty:               r.hasUnstagedChanges(),
+		UntrackedFiles:      r.hasUntrackedFiles(),
+		TimeSinceLastCommit: r.getTimeSinceLastCommit(),
 	}
 }
 
-func main() {
-
-	database := readDatabase("repos.yml")
-
-	addRepoState(database)
-
+func addRepoState(database []*repoInfo) {
 	for _, ri := range database {
-		fmt.Println(ri.State)
+		ri.State = ri.Config.getState()
 	}
+}
+
+func getDummyRepo() *repoInfo {
 
 	ri := repoInfo{
 		Config: repoConfig{
@@ -150,9 +178,42 @@ func main() {
 		State: repoState{
 			Dirty:               true,
 			UntrackedFiles:      false,
-			TimeSinceLastCommit: "",
+			TimeSinceLastCommit: time.Unix(0, 0),
 		},
 	}
-	database = append(database, &ri)
+	return &ri
+}
 
+func main() {
+
+	args := getArgs()
+	fmt.Println(args)
+	if args.generateConfig {
+		generateConfig("Rename_to_.repos.yml")
+		fmt.Println("Generated config file 'Rename_to_.repos.yml'")
+		return
+	}
+
+	database := readDatabase("repos.yml")
+
+	addRepoState(database)
+
+	fmt.Println("Repo                     Status              Date of last commit")
+	for _, ri := range database {
+		fmt.Printf("\033[;1m%-16s\033[0m", ri.Config.Name)
+
+		if ri.State.Dirty {
+			fmt.Printf(" \033[33mDirty\033[0m")
+		} else {
+			fmt.Printf(" \033[32mClean\033[0m")
+		}
+
+		if ri.State.UntrackedFiles {
+			fmt.Printf(" \033[33mUntracked Files   \033[0m")
+		} else {
+			fmt.Printf(" \033[32mNo untracked files\033[0m")
+		}
+		dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
+		fmt.Printf("       %-4d Hours\n", int(dt.Hours()))
+	}
 }

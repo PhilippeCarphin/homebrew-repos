@@ -13,3 +13,15 @@ repos:
     path: /Users/pcarphin/Documents/GitHub/tests
     shortname: t
     fetch: false
+
+  jobrun:
+    path: /Users/pcarphin/go/src/gitlab.science.gc.ca/phc001/jobrun
+    shortname: t
+    fetch: false
+
+  go-snippets:
+    path: /Users/pcarphin/go/src/gitlab.com/philippecarphin/go-snippets
+    shortname: t
+    fetch: false
+  repo-manager:
+    path: /Users/pcarphin/Documents/GitHub/repo-manager
