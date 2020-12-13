@@ -1,0 +1,15 @@
+config:
+  color: true
+  defaults:
+    fetch: false
+
+repos:
+  FocusTree:
+    path: /Users/pcarphin/Documents/GitHub/FocusTree
+    shortname: ft
+    fetch: true
+
+  tests:
+    path: /Users/pcarphin/Documents/GitHub/tests
+    shortname: t
+    fetch: false
