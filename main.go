@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"sync"
 	"time"
 
 	"os"
@@ -151,17 +152,30 @@ func readDatabase(filename string) []*repoInfo {
 }
 
 func (r repoConfig) getState() repoState {
+	usc := make(chan bool)
+	utf := make(chan bool)
+	tsl := make(chan time.Time)
+	go func () {usc <- r.hasUnstagedChanges()}()
+	go func () {utf <- r.hasUntrackedFiles()}()
+	go func () {tsl <- r.getTimeSinceLastCommit()}()
 	return repoState{
-		Dirty:               r.hasUnstagedChanges(),
-		UntrackedFiles:      r.hasUntrackedFiles(),
-		TimeSinceLastCommit: r.getTimeSinceLastCommit(),
+		Dirty:               <- usc,
+		UntrackedFiles:      <- utf,
+		TimeSinceLastCommit: <- tsl,
 	}
 }
 
 func addRepoState(database []*repoInfo) {
+	var wg sync.WaitGroup
 	for _, ri := range database {
-		ri.State = ri.Config.getState()
+		wg.Add(1)
+		go func (r *repoInfo) {
+			defer wg.Done()
+			r.State = r.Config.getState()
+		}(ri)
 	}
+	wg.Wait()
+
 }
 
 func getDummyRepo() *repoInfo {
