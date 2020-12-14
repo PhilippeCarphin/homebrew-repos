@@ -249,6 +249,6 @@ func printRepoInfo(ri *repoInfo) {
 		fmt.Printf(" \033[32mNo untracked files\033[0m")
 	}
 	dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
-	fmt.Printf("       %-4d Hours", int(dt.Hours()))
-	fmt.Printf("  %s\n", ri.Config.Comment)
+	fmt.Printf(" %-4d Hours", int(dt.Hours()))
+	fmt.Printf(" %s\n", ri.Config.Comment)
 }
