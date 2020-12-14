@@ -16,7 +16,7 @@ import (
 
 // RepoFile sucks
 type RepoFile struct {
-	Repos map[string]repoConfig
+	Repos  map[string]repoConfig
 	Config config
 }
 type args struct {
@@ -47,7 +47,7 @@ type repoConfig struct {
 	Path      string
 	Name      string
 	ShortName string
-	Fetch bool
+	Fetch     bool
 }
 
 type repoInfo struct {
@@ -73,7 +73,7 @@ func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 func (r *repoConfig) hasUnstagedChanges() bool {
 	cmd := r.gitCommand("diff", "--no-ext-diff", "--quiet", "--exit-code")
 	cmd.Run()
-	return ! cmd.ProcessState.Success()
+	return !cmd.ProcessState.Success()
 }
 
 func (r *repoConfig) hasUntrackedFiles() bool {
@@ -102,12 +102,12 @@ func dumpDatabase(filename string, database []*repoInfo) {
 func generateConfig(filename string) {
 	repoFile := RepoFile{
 		Repos: map[string]repoConfig{
-			"MyRepo": {},
+			"MyRepo":      {},
 			"MyOtherRepo": {},
 		},
-		Config: config {
+		Config: config{
 			Color: true,
-			Defaults: repoConfig {
+			Defaults: repoConfig{
 				Fetch: true,
 			},
 		},
@@ -129,7 +129,6 @@ func (r repoConfig) getTimeSinceLastCommit() time.Time {
 	fmt.Sscanf(string(out), "%d", &timestamp)
 	return time.Unix(timestamp, 0)
 }
-
 
 func readDatabase(filename string) []*repoInfo {
 	repoFile := RepoFile{}
@@ -155,13 +154,13 @@ func (r repoConfig) getState() repoState {
 	usc := make(chan bool)
 	utf := make(chan bool)
 	tsl := make(chan time.Time)
-	go func () {usc <- r.hasUnstagedChanges()}()
-	go func () {utf <- r.hasUntrackedFiles()}()
-	go func () {tsl <- r.getTimeSinceLastCommit()}()
+	go func() { usc <- r.hasUnstagedChanges() }()
+	go func() { utf <- r.hasUntrackedFiles() }()
+	go func() { tsl <- r.getTimeSinceLastCommit() }()
 	return repoState{
-		Dirty:               <- usc,
-		UntrackedFiles:      <- utf,
-		TimeSinceLastCommit: <- tsl,
+		Dirty:               <-usc,
+		UntrackedFiles:      <-utf,
+		TimeSinceLastCommit: <-tsl,
 	}
 }
 
@@ -169,7 +168,7 @@ func addRepoState(database []*repoInfo) {
 	var wg sync.WaitGroup
 	for _, ri := range database {
 		wg.Add(1)
-		go func (r *repoInfo) {
+		go func(r *repoInfo) {
 			defer wg.Done()
 			r.State = r.Config.getState()
 		}(ri)
@@ -207,24 +206,41 @@ func main() {
 
 	database := readDatabase("repos.yml")
 
-	addRepoState(database)
-
-	fmt.Println("Repo                     Status              Date of last commit")
+	infoCh := make(chan *repoInfo)
+	var wg sync.WaitGroup
 	for _, ri := range database {
-		fmt.Printf("\033[;1m%-16s\033[0m", ri.Config.Name)
-
-		if ri.State.Dirty {
-			fmt.Printf(" \033[33mDirty\033[0m")
-		} else {
-			fmt.Printf(" \033[32mClean\033[0m")
-		}
-
-		if ri.State.UntrackedFiles {
-			fmt.Printf(" \033[33mUntracked Files   \033[0m")
-		} else {
-			fmt.Printf(" \033[32mNo untracked files\033[0m")
-		}
-		dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
-		fmt.Printf("       %-4d Hours\n", int(dt.Hours()))
+		wg.Add(1)
+		go func(r *repoInfo) {
+			r.State = r.Config.getState()
+			infoCh <- r
+		}(ri)
 	}
+
+	go func(wg *sync.WaitGroup) {
+		for ri := range infoCh {
+			printRepoInfo(ri)
+			wg.Done()
+		}
+	}(&wg)
+
+	wg.Wait()
+}
+
+func printRepoInfo(ri *repoInfo) {
+
+	fmt.Printf("\033[;1m%-16s\033[0m", ri.Config.Name)
+
+	if ri.State.Dirty {
+		fmt.Printf(" \033[33mDirty\033[0m")
+	} else {
+		fmt.Printf(" \033[32mClean\033[0m")
+	}
+
+	if ri.State.UntrackedFiles {
+		fmt.Printf(" \033[33mUntracked Files   \033[0m")
+	} else {
+		fmt.Printf(" \033[32mNo untracked files\033[0m")
+	}
+	dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
+	fmt.Printf("       %-4d Hours\n", int(dt.Hours()))
 }
