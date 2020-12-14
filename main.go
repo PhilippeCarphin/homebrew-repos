@@ -8,6 +8,7 @@ import (
 
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"io/ioutil"
 
@@ -31,7 +32,7 @@ func getArgs() args {
 	var a args
 
 	a.command = flag.Arg(0)
-	flag.StringVar(&a.path, "path", "/a/path/", "Path of repo")
+	flag.StringVar(&a.path, "path", "", "Path of repo")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "")
 	flag.Parse()
 
@@ -64,6 +65,7 @@ type repoState struct {
 type repos []repoConfig
 
 func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
+	time.Sleep(time.Millisecond * 500)
 	cmd := exec.Command("git", args...)
 	cmd.Stderr = os.Stderr
 	cmd.Dir = r.Path
@@ -197,14 +199,18 @@ func getDummyRepo() *repoInfo {
 func main() {
 
 	args := getArgs()
-	fmt.Println(args)
+	fmt.Printf("Args : %v\n", args)
 	if args.generateConfig {
 		generateConfig("Rename_to_.repos.yml")
 		fmt.Println("Generated config file 'Rename_to_.repos.yml'")
 		return
 	}
 
-	database := readDatabase("repos.yml")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	database := readDatabase(filepath.Join(home, ".repos.yml"))
 
 	infoCh := make(chan *repoInfo)
 	var wg sync.WaitGroup
