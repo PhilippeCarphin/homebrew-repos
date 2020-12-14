@@ -49,6 +49,7 @@ type repoConfig struct {
 	Name      string
 	ShortName string
 	Fetch     bool
+	Comment   string
 }
 
 type repoInfo struct {
@@ -248,5 +249,6 @@ func printRepoInfo(ri *repoInfo) {
 		fmt.Printf(" \033[32mNo untracked files\033[0m")
 	}
 	dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
-	fmt.Printf("       %-4d Hours\n", int(dt.Hours()))
+	fmt.Printf("       %-4d Hours", int(dt.Hours()))
+	fmt.Printf("  %s\n", ri.Config.Comment)
 }
