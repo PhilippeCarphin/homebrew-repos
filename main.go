@@ -75,9 +75,9 @@ func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 
 func (r *repoConfig) hasUnstagedChanges() bool {
 	cmd := r.gitCommand("diff", "--no-ext-diff", "--quiet", "--exit-code")
-	err := cmd.Run()
-	if err != nil {
-		panic(fmt.Errorf("Failed to run command : %v", err))
+	_ = cmd.Run()
+	if cmd.ProcessState == nil {
+		panic(fmt.Errorf("Failed to run command %v for repo %v",cmd, r))
 	}
 	return !cmd.ProcessState.Success()
 }
