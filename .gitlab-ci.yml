@@ -16,6 +16,7 @@ test:
 build:
   stage: build
   script:
+    - export PATH=$HOME/.local/bin:$PATH
     - go version
     - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
