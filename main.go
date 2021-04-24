@@ -73,22 +73,22 @@ func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 	return cmd
 }
 
-func (r *repoConfig) hasUnstagedChanges() bool {
+func (r *repoConfig) hasUnstagedChanges() (bool, error) {
 	cmd := r.gitCommand("diff", "--no-ext-diff", "--quiet", "--exit-code")
 	_ = cmd.Run()
 	if cmd.ProcessState == nil {
-		panic(fmt.Errorf("Failed to run command %v for repo %v",cmd, r))
+		return false, fmt.Errorf("Failed to run command %v for repo %v", cmd, r)
 	}
-	return !cmd.ProcessState.Success()
+	return !cmd.ProcessState.Success(), nil
 }
 
-func (r *repoConfig) hasUntrackedFiles() bool {
+func (r *repoConfig) hasUntrackedFiles() (bool, error) {
 	cmd := r.gitCommand("ls-files", r.Path, "--others", "--exclude-standard")
 	out, err := cmd.Output()
 	if err != nil {
-		panic(err)
+		return false, fmt.Errorf("Could not run git command for repo '%s' : %v", r.Path, err)
 	}
-	return len(out) != 0
+	return len(out) != 0, nil
 }
 func dumpDatabase(filename string, database []*repoInfo) {
 	repos := make(map[string]repoConfig, len(database))
@@ -107,17 +107,14 @@ func dumpDatabase(filename string, database []*repoInfo) {
 
 func generateConfig(filename string) {
 	y := `repos:
-  SomeRepo:
-    path: "/Users/pcarphin/.emacs.d"
-  SomeOtherRepo:
-    path: "/Users/pcarphin/.emacs.d"
-    # name: "Emacs config"
-    # shortname: "emacsd"
-    # fetch: true
-    # comment: ""
+  RepoName:
+    path: "/path/to/git/repo"
+  MyOtherRepoName:
+    path: "/path/to/other/git/repo"
 config:
   color: true
   defaults:
+    # Default values for repos
     path: ""
     name: ""
     shortname: ""
@@ -127,23 +124,23 @@ config:
 	ioutil.WriteFile(filename, []byte(y), 0644)
 }
 
-func (r repoConfig) getTimeSinceLastCommit() time.Time {
+func (r repoConfig) getTimeSinceLastCommit() (time.Time, error) {
 	cmd := r.gitCommand("log", "--pretty=format:%at", "-1")
 	out, err := cmd.Output()
 	if err != nil {
-		panic(err)
+		return time.Unix(0, 0), fmt.Errorf("Could not get time since last commit for repo '%s' : %v", r.Path, err)
 	}
 	var timestamp int64
 	fmt.Sscanf(string(out), "%d", &timestamp)
-	return time.Unix(timestamp, 0)
+	return time.Unix(timestamp, 0), nil
 }
 
-func readDatabase(filename string) []*repoInfo {
+func readDatabase(filename string) ([]*repoInfo, error) {
 	repoFile := RepoFile{}
 
 	yml, err := ioutil.ReadFile(filename)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	yaml.Unmarshal(yml, &repoFile)
 
@@ -155,21 +152,46 @@ func readDatabase(filename string) []*repoInfo {
 		}
 		database = append(database, &ri)
 	}
-	return database
+	return database, nil
 }
 
-func (r repoConfig) getState() repoState {
+func (r repoConfig) getState() (repoState, error) {
 	usc := make(chan bool)
 	utf := make(chan bool)
 	tsl := make(chan time.Time)
-	go func() { usc <- r.hasUnstagedChanges() }()
-	go func() { utf <- r.hasUntrackedFiles() }()
-	go func() { tsl <- r.getTimeSinceLastCommit() }()
+
+	go func() {
+		r, err := r.hasUnstagedChanges()
+		if err != nil {
+			fmt.Printf("ERROR : %v\n", err)
+			os.Exit(1)
+		}
+		usc <- r
+	}()
+
+	go func() {
+		u, err := r.hasUntrackedFiles()
+		if err != nil {
+			fmt.Printf("ERROR : %v\n", err)
+			os.Exit(1)
+		}
+		utf <- u
+	}()
+
+	go func() {
+		t, err := r.getTimeSinceLastCommit()
+		if err != nil {
+			fmt.Printf("ERROR : %v\n", err)
+			os.Exit(1)
+		}
+		tsl <- t
+	}()
+
 	return repoState{
 		Dirty:               <-usc,
 		UntrackedFiles:      <-utf,
 		TimeSinceLastCommit: <-tsl,
-	}
+	}, nil
 }
 
 func addRepoState(database []*repoInfo) {
@@ -178,7 +200,11 @@ func addRepoState(database []*repoInfo) {
 		wg.Add(1)
 		go func(r *repoInfo) {
 			defer wg.Done()
-			r.State = r.Config.getState()
+			var err error
+			r.State, err = r.Config.getState()
+			if err != nil {
+				panic(err)
+			}
 		}(ri)
 	}
 	wg.Wait()
@@ -216,14 +242,24 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	database := readDatabase(filepath.Join(home, ".repos.yml"))
+	database, err := readDatabase(filepath.Join(home, ".repos.yml"))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	infoCh := make(chan *repoInfo)
 	var wg sync.WaitGroup
 	for _, ri := range database {
 		wg.Add(1)
 		go func(r *repoInfo) {
-			r.State = r.Config.getState()
+			var err error
+			r.State, err = r.Config.getState()
+			if err != nil {
+				fmt.Println(err)
+				infoCh <- nil
+				return
+			}
 			infoCh <- r
 		}(ri)
 	}
