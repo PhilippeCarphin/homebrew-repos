@@ -11,7 +11,7 @@ test:
     - go test ./...
     - go run main.go -generate-config
     - ln -s $PWD/Rename_to_.repos.yml ~/.repos.yml
-    - go run main.go
+    - go run main.go || true
 
 build:
   stage: build
