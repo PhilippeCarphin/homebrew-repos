@@ -23,3 +23,5 @@ build:
     - go build -o repos-$GOOS-$GOARCH
     - export GOOS=linux
     - go build -o repos-$GOOS-$GOARCH
+  artifacts:
+    untracked: true
