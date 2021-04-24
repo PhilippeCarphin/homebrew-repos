@@ -3,6 +3,12 @@ image: golang:latest
 stages:
   - test
   - build
+variables:
+  ORD_SOUMET_C: "40"
+  ORD_SOUMET_T: "3600"
+  ORD_SOUMET_TMPFS: "5G"
+  ORD_SOUMET_CM: "100G"
+  ORD_SOUMET_SHELL: "/bin/bash"
 
 test:
   stage: test
