@@ -1,0 +1,55 @@
+#+TITLE: Repos
+
+A tool that checks on all your repos.
+
+#+begin_example
+$ repos
+ci.fstcomp       Clean No untracked files 406  Hours
+linkcgo          Dirty Untracked Files    404  Hours
+go.voir          Dirty Untracked Files    436  Hours
+#+end_example
+
+configured in a =~/.repos.yml= file.
+
+* Install and use
+
+Get the binary by building or downloading (see next sections).  Put it somewhere in your path.
+
+Create a =~/.repos.yml= file like this:
+
+#+begin_src yaml
+repos:
+  RepoName:
+    path: "/path/to/git/repo"
+  MyOtherRepoName:
+    path: "/path/to/other/git/repo"
+config:
+  color: true
+  defaults:
+    # Default values for repo
+#+end_src
+
+and simply run the binary that you built or downloaded.
+
+Note: I don't check if the directory is a git repo.  So if it exists and is not
+one, then my program will be confused.  If the path doesn't exist, you will get
+a nice error message.
+
+
+* Download
+
+Download the latest version built by CI:
+[[https://gitlab.com/philippecarphin/repos/-/jobs/artifacts/master/download?job=build]]
+
+Use the right file for your OS and architecture.  If you are not sure, that
+means that you are on =amd64= (if your computer was =arm=, you would be aware of
+it).
+
+* Build
+
+#+begin_src shell
+git clone https://gitlab.com/philippecarphin/repos
+cd repos
+go build
+#+end_src
+
