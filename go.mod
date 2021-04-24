@@ -1,4 +1,4 @@
-module gitlab.com/philippecaprhin/repos
+module repos
 
 go 1.16
 
