@@ -17,10 +17,10 @@ build:
   stage: build
   script:
     - go version
-    - GOOS=darwin   GOARCH=amd64  go build -o repos-${GOOS}-${GOARCH}
-    - GOOS=darwin   GOARCH=arm64  go build -o repos-${GOOS}-${GOARCH}
-    - GOOS=linux    GOARCH=amd64  go build -o repos-${GOOS}-${GOARCH}
-    - GOOS=linux    GOARCH=arm64  go build -o repos-${GOOS}-${GOARCH}
-    - GOOS=windows  GOARCH=amd64  go build -o repos-${GOOS}-${GOARCH}
+    - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
+    - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
+    - export GOOS=linux    GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
+    - export GOOS=linux    GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
+    - export GOOS=windows  GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
   artifacts:
     untracked: true
