@@ -106,23 +106,25 @@ func dumpDatabase(filename string, database []*repoInfo) {
 }
 
 func generateConfig(filename string) {
-	repoFile := RepoFile{
-		Repos: map[string]repoConfig{
-			"MyRepo":      {},
-			"MyOtherRepo": {},
-		},
-		Config: config{
-			Color: true,
-			Defaults: repoConfig{
-				Fetch: true,
-			},
-		},
-	}
-	yamlOut, err := yaml.Marshal(&repoFile)
-	if err != nil {
-		panic(err)
-	}
-	ioutil.WriteFile(filename, yamlOut, 0644)
+	y := `repos:
+  SomeRepo:
+    path: "/Users/pcarphin/.emacs.d"
+  SomeOtherRepo:
+    path: "/Users/pcarphin/.emacs.d"
+    # name: "Emacs config"
+    # shortname: "emacsd"
+    # fetch: true
+    # comment: ""
+config:
+  color: true
+  defaults:
+    path: ""
+    name: ""
+    shortname: ""
+    fetch: true
+    comment: ""
+`
+	ioutil.WriteFile(filename, []byte(y), 0644)
 }
 
 func (r repoConfig) getTimeSinceLastCommit() time.Time {
