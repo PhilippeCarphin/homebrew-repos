@@ -1,0 +1,25 @@
+image: golang:latest
+
+stages:
+  - test
+  - build
+
+test:
+  stage: test
+  script:
+    - go test ./...
+
+build:
+  stage: build
+  script:
+    - go version
+    - export GOOS=darwin
+    - export GOARCH=amd64
+    - go build -o repos-$GOOS-$GOARCH
+    - export GOOS=darwin
+    - go build -o repos-$GOOS-$GOARCH
+    - export GOOS=darwin
+    - export GOARCH=arm64
+    - go build -o repos-$GOOS-$GOARCH
+    - export GOOS=linux
+    - go build -o repos-$GOOS-$GOARCH
