@@ -245,22 +245,6 @@ func (r repoConfig) getState() (repoState, error) {
 	return state, nil
 }
 
-func addRepoState(database []*repoInfo) {
-	var wg sync.WaitGroup
-	for _, ri := range database {
-		wg.Add(1)
-		go func(r *repoInfo) {
-			defer wg.Done()
-			var err error
-			r.State, err = r.Config.getState()
-			if err != nil {
-				panic(err)
-			}
-		}(ri)
-	}
-	wg.Wait()
-
-}
 
 func getDummyRepo() *repoInfo {
 
@@ -298,10 +282,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	infoCh := make(chan *repoInfo, 100)
+	sem := make(chan struct{}, 5)
+	infoCh := make(chan *repoInfo)
 	var wg sync.WaitGroup
 	for _, ri := range database {
 		wg.Add(1)
+		sem <- struct{}{}
 		go func(r *repoInfo) {
 			var err error
 			r.State, err = r.Config.getState()
@@ -310,6 +296,8 @@ func main() {
 				infoCh <- nil
 				return
 			}
+			fmt.Printf("<-sem\n")
+			<- sem
 			infoCh <- r
 		}(ri)
 	}
