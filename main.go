@@ -26,6 +26,7 @@ type args struct {
 	path           string
 	name           string
 	generateConfig bool
+	njobs          int
 }
 
 func getArgs() args {
@@ -35,6 +36,7 @@ func getArgs() args {
 	a.command = flag.Arg(0)
 	flag.StringVar(&a.path, "path", "", "Path of repo")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "")
+	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.Parse()
 
 	return a
@@ -282,7 +284,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	sem := make(chan struct{}, 5)
+	sem := make(chan struct{}, args.njobs)
 	infoCh := make(chan *repoInfo)
 	var wg sync.WaitGroup
 	for _, ri := range database {
