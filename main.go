@@ -82,6 +82,15 @@ func (r *repoConfig) hasUnstagedChanges() (bool, error) {
 	return !cmd.ProcessState.Success(), nil
 }
 
+func (r *repoConfig) hasStagedChanges() (bool, error) {
+	cmd := r.gitCommand("diff", "--staged", "--no-ext-diff", "--quiet", "--exit-code")
+	_ = cmd.Run()
+	if cmd.ProcessState == nil {
+		return false, fmt.Errorf("Failed to run command %v for repo %v", cmd, r)
+	}
+	return !cmd.ProcessState.Success(), nil
+}
+
 func (r *repoConfig) hasUntrackedFiles() (bool, error) {
 	cmd := r.gitCommand("ls-files", r.Path, "--others", "--exclude-standard")
 	out, err := cmd.Output()
