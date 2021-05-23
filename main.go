@@ -298,7 +298,9 @@ func main() {
 			}
 			fmt.Printf("<-sem\n")
 			<- sem
+			fmt.Printf("(after <-sem)\n")
 			infoCh <- r
+			fmt.Printf("(after infoCh <-r )\n")
 		}(ri)
 	}
 
