@@ -101,6 +101,7 @@ const (
 	RemoteStateDiverged
 	RemoteStateBehind
 	RemoteStateAhead
+	RemoteStateUnknown
 )
 
 func (r *repoConfig) getRemoteState() (RemoteState, error) {
@@ -205,6 +206,23 @@ func (r repoConfig) getState() (repoState, error) {
 	state := repoState{}
 	var err error
 
+	cmd := r.gitCommand("fetch")
+	cmd.Stderr = nil
+	_ = cmd.Run()
+	if cmd.ProcessState == nil {
+		return state, fmt.Errorf("error encountered when attempting to fetch '%s'", r.Path)
+	}
+	if cmd.ProcessState.Success() {
+		state.RemoteState, err = r.getRemoteState()
+		if err != nil {
+			return state, err
+		}
+	} else {
+		state.RemoteState = RemoteStateUnknown
+	}
+
+
+
 	state.Dirty, err = r.hasUnstagedChanges()
 	if err != nil {
 		return state, err
@@ -216,11 +234,6 @@ func (r repoConfig) getState() (repoState, error) {
 	}
 
 	state.TimeSinceLastCommit, err = r.getTimeSinceLastCommit()
-	if err != nil {
-		return state, err
-	}
-
-	state.RemoteState, err = r.getRemoteState()
 	if err != nil {
 		return state, err
 	}
@@ -270,7 +283,6 @@ func getDummyRepo() *repoInfo {
 func main() {
 
 	args := getArgs()
-	fmt.Printf("Args : %v\n", args)
 	if args.generateConfig {
 		generateConfig("Rename_to_.repos.yml")
 		fmt.Println("Generated config file 'Rename_to_.repos.yml'")
@@ -323,19 +335,23 @@ func (rs RemoteState) String() string {
 		return "ahead"
 	case RemoteStateDiverged:
 		return "diverged"
+	case RemoteStateUnknown:
+		return "unknown"
 	}
 	return "UNKNOWN"
 }
 
 func printRepoInfo(ri *repoInfo) {
 
-	fmt.Printf("\033[;1m%-25s\033[0m", ri.Config.Name)
+	fmt.Printf("\033[;1m%-28s\033[0m", ri.Config.Name)
 
 	switch ri.State.RemoteState {
 	case RemoteStateNormal:
 		fmt.Printf("%8s ", "")
 	case RemoteStateBehind, RemoteStateAhead, RemoteStateDiverged:
 		fmt.Printf("\033[1;35m%8v\033[0m ", ri.State.RemoteState)
+	case RemoteStateUnknown:
+		fmt.Printf("\033[1;37;41m%v\033[0m  ", ri.State.RemoteState)
 	}
 
 	if ri.State.StagedChanges && ri.State.Dirty {
