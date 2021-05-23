@@ -287,8 +287,9 @@ func main() {
 	var wg sync.WaitGroup
 	for _, ri := range database {
 		wg.Add(1)
-		sem <- struct{}{}
 		go func(r *repoInfo) {
+			sem <- struct{}{}
+			defer func(){ <-sem}()
 			var err error
 			r.State, err = r.Config.getState()
 			if err != nil {
@@ -297,7 +298,6 @@ func main() {
 				return
 			}
 			fmt.Printf("<-sem\n")
-			<- sem
 			fmt.Printf("(after <-sem)\n")
 			infoCh <- r
 			fmt.Printf("(after infoCh <-r )\n")
