@@ -362,16 +362,19 @@ func printRepoInfo(ri *repoInfo) {
 
 	switch ri.State.RemoteState {
 	case RemoteStateNormal:
-		fmt.Printf("%7s ", "")
+		fmt.Printf("%8s ", "")
 	case RemoteStateBehind, RemoteStateAhead, RemoteStateDiverged:
-		fmt.Printf("(%v)", ri.State.RemoteState )
+		fmt.Printf("\033[1;35m%8v\033[0m ", ri.State.RemoteState)
 	}
 
-
-	if ri.State.Dirty {
-		fmt.Printf(" \033[33mDirty\033[0m")
+	if ri.State.StagedChanges && ri.State.Dirty {
+		fmt.Printf(" \033[1;4;33m%-17s\033[0m ", "Staged & Unstaged")
+	} else if ri.State.StagedChanges {
+		fmt.Printf(" \033[1;33m%-17s\033[0m ", "Staged")
+	} else if ri.State.Dirty {
+		fmt.Printf(" \033[33m%-17s\033[0m ", "Unstaged")
 	} else {
-		fmt.Printf(" \033[32mClean\033[0m")
+		fmt.Printf(" \033[32m%-17s\033[0m ", "Clean")
 	}
 
 	if ri.State.UntrackedFiles {
