@@ -113,7 +113,6 @@ func (r *repoConfig) getRemoteState() (RemoteState, error) {
 
 	sout := string(out)
 	if strings.Contains(sout, "Your branch is behind") {
-		fmt.Printf("sout for repo %s is %s\n", r.Path, sout)
 		return RemoteStateBehind, nil
 	}
 
