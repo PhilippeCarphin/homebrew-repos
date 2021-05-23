@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"strings"
 
 	"os"
 	"os/exec"
@@ -61,6 +62,8 @@ type repoState struct {
 	Dirty               bool
 	UntrackedFiles      bool
 	TimeSinceLastCommit time.Time
+	RemoteState         RemoteState
+	StagedChanges       bool
 }
 
 type repos []repoConfig
@@ -89,6 +92,43 @@ func (r *repoConfig) hasStagedChanges() (bool, error) {
 		return false, fmt.Errorf("Failed to run command %v for repo %v", cmd, r)
 	}
 	return !cmd.ProcessState.Success(), nil
+}
+
+type RemoteState int
+const (
+	RemoteStateNormal = iota
+	RemoteStateDiverged
+	RemoteStateBehind
+	RemoteStateAhead
+)
+
+func (r *repoConfig) getRemoteState() (RemoteState, error){
+	cmd := r.gitCommand("status")
+	out, err := cmd.Output()
+	if err != nil {
+		return RemoteStateNormal, fmt.Errorf("could not run git command for repo %s", r.Path)
+	}
+	// rs->behind = (strstr(output, "Your branch is behind") != NULL);
+    	// rs->ahead = (strstr(output, "Your branch is ahead") != NULL);
+    	// rs->diverged = (strstr(output, "different commits each, respectively.") != NULL);
+    	// rs->staged_changes = (strstr(output, "Changes to be committed:") != NULL);
+    	// rs->unstaged_changes = (strstr(output, "Changes not staged for commit:") != NULL);
+
+	sout := string(out)
+	if strings.Contains(sout, "Your branch is behind") {
+		fmt.Printf("sout for repo %s is %s\n", r.Path, sout)
+		return RemoteStateBehind, nil
+	}
+
+	if strings.Contains(sout, "Your branch is ahead") {
+		return RemoteStateAhead, nil
+	}
+
+	if strings.Contains(sout, "different commits each, respectively") {
+		return RemoteStateDiverged, nil
+	}
+
+	return RemoteStateNormal, nil;
 }
 
 func (r *repoConfig) hasUntrackedFiles() (bool, error) {
@@ -167,7 +207,9 @@ func readDatabase(filename string) ([]*repoInfo, error) {
 func (r repoConfig) getState() (repoState, error) {
 	usc := make(chan bool)
 	utf := make(chan bool)
+	stc := make(chan bool)
 	tsl := make(chan time.Time)
+	rst := make(chan RemoteState)
 
 	go func() {
 		r, err := r.hasUnstagedChanges()
@@ -196,10 +238,30 @@ func (r repoConfig) getState() (repoState, error) {
 		tsl <- t
 	}()
 
+	go func() {
+		r, err := r.getRemoteState()
+		if err != nil {
+			fmt.Printf("ERROR : %v\n", err)
+			os.Exit(1)
+		}
+		rst <- r
+	}()
+
+	go func() {
+		s, err := r.hasStagedChanges()
+		if err != nil {
+			fmt.Printf("ERROR : %v\n", err)
+			os.Exit(1)
+		}
+		stc <- s
+	}()
+
 	return repoState{
 		Dirty:               <-usc,
 		UntrackedFiles:      <-utf,
 		TimeSinceLastCommit: <-tsl,
+		RemoteState:         <-rst,
+		StagedChanges:       <-stc,
 	}, nil
 }
 
@@ -257,20 +319,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	infoCh := make(chan *repoInfo)
+	infoCh := make(chan *repoInfo, 100)
 	var wg sync.WaitGroup
 	for _, ri := range database {
 		wg.Add(1)
-		go func(r *repoInfo) {
+		// go func(r *repoInfo) {
 			var err error
-			r.State, err = r.Config.getState()
+			ri.State, err = ri.Config.getState()
 			if err != nil {
 				fmt.Println(err)
 				infoCh <- nil
 				return
 			}
-			infoCh <- r
-		}(ri)
+			printRepoInfo(ri)
+			// infoCh <- ri
+		// }(ri)
 	}
 
 	go func(wg *sync.WaitGroup) {
@@ -283,9 +346,27 @@ func main() {
 	wg.Wait()
 }
 
+func (rs RemoteState) String() string {
+	switch rs {
+	case RemoteStateNormal: return "normal"
+	case RemoteStateBehind: return "behind"
+	case RemoteStateAhead: return "ahead"
+	case RemoteStateDiverged: return "diverged"
+	}
+	return "UNKNOWN"
+}
+
 func printRepoInfo(ri *repoInfo) {
 
-	fmt.Printf("\033[;1m%-16s\033[0m", ri.Config.Name)
+	fmt.Printf("\033[;1m%-25s\033[0m", ri.Config.Name)
+
+	switch ri.State.RemoteState {
+	case RemoteStateNormal:
+		fmt.Printf("%7s ", "")
+	case RemoteStateBehind, RemoteStateAhead, RemoteStateDiverged:
+		fmt.Printf("(%v)", ri.State.RemoteState )
+	}
+
 
 	if ri.State.Dirty {
 		fmt.Printf(" \033[33mDirty\033[0m")
