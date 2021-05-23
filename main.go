@@ -297,10 +297,7 @@ func main() {
 				infoCh <- nil
 				return
 			}
-			fmt.Printf("<-sem\n")
-			fmt.Printf("(after <-sem)\n")
 			infoCh <- r
-			fmt.Printf("(after infoCh <-r )\n")
 		}(ri)
 	}
 
