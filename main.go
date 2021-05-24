@@ -296,8 +296,6 @@ func main() {
 			r.State, err = r.Config.getState()
 			if err != nil {
 				fmt.Println(err)
-				infoCh <- nil
-				return
 			}
 			infoCh <- r
 		}(ri)
