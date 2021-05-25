@@ -36,7 +36,7 @@ func getArgs() args {
 
 	a.command = flag.Arg(0)
 	flag.StringVar(&a.path, "path", "", "Path of repo")
-	flag.BoolVar(&a.generateConfig, "generate-config", false, "")
+	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
 	flag.Parse()
@@ -155,22 +155,36 @@ func dumpDatabase(filename string, database []*repoInfo) {
 }
 
 func generateConfig(filename string) {
-	y := `repos:
-  RepoName:
-    path: "/path/to/git/repo"
-  MyOtherRepoName:
-    path: "/path/to/other/git/repo"
-config:
-  color: true
-  defaults:
-    # Default values for repos
-    path: ""
-    name: ""
-    shortname: ""
-    fetch: true
-    comment: ""
-`
-	ioutil.WriteFile(filename, []byte(y), 0644)
+
+	y := strings.Builder{}
+	nbRepos := 0
+
+	subdirs, err := ioutil.ReadDir(".")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Fprintf(&y, "repos:\n")
+	for _, f := range subdirs {
+		gitdir := fmt.Sprintf("%s/.git", f.Name())
+		if _, err := os.Stat(gitdir); err != nil {
+			continue
+		}
+		nbRepos++
+		repoName := f.Name()
+		repoPath := fmt.Sprintf("%s/%s", os.Getenv("PWD"), f.Name())
+		fmt.Fprintf(&y, "  %s:\n    path: \"%s\"\n", repoName, repoPath)
+	}
+
+	if nbRepos == 0 {
+		fmt.Fprintf(os.Stderr, "No git repos found in %s\n", os.Getenv("PWD"))
+	}
+
+	if filename != "" {
+		ioutil.WriteFile(filename, []byte(y.String()), 0644)
+	} else {
+		print(y.String())
+	}
 }
 
 func (r repoConfig) getTimeSinceLastCommit() (time.Time, error) {
@@ -273,8 +287,7 @@ func main() {
 
 	args := getArgs()
 	if args.generateConfig {
-		generateConfig("Rename_to_.repos.yml")
-		fmt.Println("Generated config file 'Rename_to_.repos.yml'")
+		generateConfig("")
 		return
 	}
 
