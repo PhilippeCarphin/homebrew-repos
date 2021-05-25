@@ -27,6 +27,7 @@ type args struct {
 	name           string
 	generateConfig bool
 	njobs          int
+	noFetch        bool
 }
 
 func getArgs() args {
@@ -37,6 +38,7 @@ func getArgs() args {
 	flag.StringVar(&a.path, "path", "", "Path of repo")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
+	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
 	flag.Parse()
 
 	return a
@@ -202,24 +204,26 @@ func readDatabase(filename string) ([]*repoInfo, error) {
 	return database, nil
 }
 
-func (r repoConfig) getState() (repoState, error) {
+func (r repoConfig) getState(fetch bool) (repoState, error) {
 
 	state := repoState{}
 	var err error
 
-	cmd := r.gitCommand("fetch")
-	cmd.Stderr = nil
-	_ = cmd.Run()
-	if cmd.ProcessState == nil {
-		return state, fmt.Errorf("error encountered when attempting to fetch '%s'", r.Path)
-	}
-	if cmd.ProcessState.Success() {
-		state.RemoteState, err = r.getRemoteState()
-		if err != nil {
-			return state, err
+	if fetch {
+		cmd := r.gitCommand("fetch")
+		cmd.Stderr = nil
+		_ = cmd.Run()
+		if cmd.ProcessState == nil {
+			return state, fmt.Errorf("error encountered when attempting to fetch '%s'", r.Path)
 		}
-	} else {
-		state.RemoteState = RemoteStateUnknown
+		if cmd.ProcessState.Success() {
+			state.RemoteState, err = r.getRemoteState()
+			if err != nil {
+				return state, err
+			}
+		} else {
+			state.RemoteState = RemoteStateUnknown
+		}
 	}
 
 
@@ -293,7 +297,7 @@ func main() {
 			sem <- struct{}{}
 			defer func(){ <-sem}()
 			var err error
-			r.State, err = r.Config.getState()
+			r.State, err = r.Config.getState(!args.noFetch)
 			if err != nil {
 				fmt.Println(err)
 			}
