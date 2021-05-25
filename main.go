@@ -183,7 +183,7 @@ func generateConfig(filename string) {
 	if filename != "" {
 		ioutil.WriteFile(filename, []byte(y.String()), 0644)
 	} else {
-		print(y.String())
+		fmt.Printf(y.String())
 	}
 }
 
