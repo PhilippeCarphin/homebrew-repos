@@ -28,6 +28,7 @@ type args struct {
 	generateConfig bool
 	njobs          int
 	noFetch        bool
+	addRepo        string
 }
 
 func getArgs() args {
@@ -39,6 +40,7 @@ func getArgs() args {
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
+	flag.StringVar(&a.addRepo, "add-repo", "", "Add a repo")
 	flag.Parse()
 
 	return a
@@ -139,7 +141,7 @@ func (r *repoConfig) hasUntrackedFiles() (bool, error) {
 	}
 	return len(out) != 0, nil
 }
-func dumpDatabase(filename string, database []*repoInfo) {
+func dumpDatabase(filename string, database []*repoInfo) error {
 	repos := make(map[string]repoConfig, len(database))
 	for _, ri := range database {
 		repos[ri.Config.Name] = ri.Config
@@ -152,6 +154,7 @@ func dumpDatabase(filename string, database []*repoInfo) {
 		panic(err)
 	}
 	ioutil.WriteFile(filename, yamlOut, 0644)
+	return nil
 }
 
 func generateConfig(filename string) {
@@ -283,9 +286,31 @@ func getDummyRepo() *repoInfo {
 	return &ri
 }
 
+func addRepo(repoPath string) error {
+	home := os.Getenv("HOME")
+
+	database, err := readDatabase(filepath.Join(home, ".repos.yml"))
+	if err != nil {
+		return err
+	}
+
+	newRepo := repoInfo {}
+	newRepo.Config.Path = repoPath
+	newRepo.Config.Name = filepath.Base(repoPath)
+	fmt.Printf("NEW REPO %v\n", newRepo);
+
+	database = append(database, &newRepo)
+
+	return dumpDatabase("newRepos.yml" , database )
+}
+
 func main() {
 
 	args := getArgs()
+	if args.addRepo != "" {
+		addRepo(args.addRepo)
+		return
+	}
 	if args.generateConfig {
 		generateConfig("")
 		return
