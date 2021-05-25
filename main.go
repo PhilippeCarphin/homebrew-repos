@@ -35,7 +35,7 @@ func getArgs() args {
 	var a args
 
 	a.command = flag.Arg(0)
-	flag.StringVar(&a.path, "path", "", "Path of repo")
+	flag.StringVar(&a.path, "path", "", "Specify a single repo to give info for")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
@@ -288,6 +288,19 @@ func main() {
 	args := getArgs()
 	if args.generateConfig {
 		generateConfig("")
+		return
+	}
+
+	if args.path != "" {
+		ri := repoInfo{}
+		ri.Config.Name = fmt.Sprintf("-path %s", args.path)
+		ri.Config.Path = args.path
+		var err error
+		ri.State, err = ri.Config.getState(!args.noFetch)
+		if err != nil {
+			panic(err)
+		}
+		printRepoInfo(&ri)
 		return
 	}
 
