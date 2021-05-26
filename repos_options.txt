@@ -1,3 +1,8 @@
+Usage of repos:
 -generate-config
 -j
--path red green blue
+-list-names
+-list-repos
+-no-fetch
+-path
+-r
