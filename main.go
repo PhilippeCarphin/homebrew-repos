@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"io"
 	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
@@ -28,7 +29,10 @@ type args struct {
 	generateConfig bool
 	njobs          int
 	noFetch        bool
-	addRepo        string
+	repo           string
+	listNames      bool
+	listRepos      bool
+	shell          string
 }
 
 func getArgs() args {
@@ -40,7 +44,10 @@ func getArgs() args {
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
-	flag.StringVar(&a.addRepo, "add-repo", "", "Add a repo")
+	flag.StringVar(&a.repo, "r", "", "Repo to go to")
+	flag.BoolVar(&a.listNames, "list-names", false, "Output list of names on a single line for autocomplete")
+	flag.BoolVar(&a.listRepos, "list-repos", false, "Output list of names and paths")
+	flag.StringVar(&a.shell, "shell", "", "Output autocomplete script for given shell")
 	flag.Parse()
 
 	return a
@@ -75,7 +82,7 @@ type repoState struct {
 type repos []repoConfig
 
 func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
-	time.Sleep(time.Millisecond * 500)
+	// time.Sleep(time.Millisecond * 500)
 	cmd := exec.Command("git", args...)
 	cmd.Stderr = os.Stderr
 	cmd.Dir = r.Path
@@ -141,7 +148,7 @@ func (r *repoConfig) hasUntrackedFiles() (bool, error) {
 	}
 	return len(out) != 0, nil
 }
-func dumpDatabase(filename string, database []*repoInfo) error {
+func dumpDatabase(filename string, database []*repoInfo) {
 	repos := make(map[string]repoConfig, len(database))
 	for _, ri := range database {
 		repos[ri.Config.Name] = ri.Config
@@ -154,7 +161,6 @@ func dumpDatabase(filename string, database []*repoInfo) error {
 		panic(err)
 	}
 	ioutil.WriteFile(filename, yamlOut, 0644)
-	return nil
 }
 
 func generateConfig(filename string) {
@@ -221,29 +227,31 @@ func readDatabase(filename string) ([]*repoInfo, error) {
 	return database, nil
 }
 
+func (r repoConfig) fetch() error {
+	cmd := r.gitCommand("fetch")
+	cmd.Stderr = nil
+	_ = cmd.Run()
+	if cmd.ProcessState == nil {
+		return fmt.Errorf("error encountered when attempting to fetch '%s'", r.Path)
+	}
+	if ! cmd.ProcessState.Success() {
+		return fmt.Errorf("fetch command failed for repo '%s' : %v", r.Path)
+	}
+	return nil
+}
+
 func (r repoConfig) getState(fetch bool) (repoState, error) {
 
 	state := repoState{}
 	var err error
 
 	if fetch {
-		cmd := r.gitCommand("fetch")
-		cmd.Stderr = nil
-		_ = cmd.Run()
-		if cmd.ProcessState == nil {
-			return state, fmt.Errorf("error encountered when attempting to fetch '%s'", r.Path)
-		}
-		if cmd.ProcessState.Success() {
-			state.RemoteState, err = r.getRemoteState()
-			if err != nil {
-				return state, err
-			}
-		} else {
+		err := r.fetch()
+		if err != nil {
 			state.RemoteState = RemoteStateUnknown
+			return state, err
 		}
 	}
-
-
 
 	state.Dirty, err = r.hasUnstagedChanges()
 	if err != nil {
@@ -268,7 +276,6 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 	return state, nil
 }
 
-
 func getDummyRepo() *repoInfo {
 
 	ri := repoInfo{
@@ -285,32 +292,43 @@ func getDummyRepo() *repoInfo {
 	}
 	return &ri
 }
+func newShellInDir(directory string) (int, error) {
 
-func addRepo(repoPath string) error {
-	home := os.Getenv("HOME")
-
-	database, err := readDatabase(filepath.Join(home, ".repos.yml"))
+	err := os.Chdir(directory)
 	if err != nil {
-		return err
+		return 1, fmt.Errorf("could not cd to '%s', : %v", directory, err)
+	}
+	cmd := exec.Command("/bin/zsh", "-l")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	fmt.Printf("\033[1;37m==> \033[0mStarting new shell in \033[1;32m%s\033[0m\n", directory)
+	cmd.Env = append(os.Environ(), "REPOS_CONTEXT="+directory)
+	err = cmd.Run()
+	fmt.Printf("\033[1;37m==> \033[0mBack from new shell in \033[1;32m%s\033[0m\n", directory)
+	return cmd.ProcessState.ExitCode(), nil
+}
+
+func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
+	for _, ri := range database {
+		if ri.Config.Name == repoName {
+			return newShellInDir(ri.Config.Path)
+		}
+	}
+	return 1, fmt.Errorf("could not find repo '%s' in ~/.repos.yml", repoName)
+}
+func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) error {
+
+	for _, ri := range database {
+		fmt.Fprintf(os.Stdout, "complete -f -c repos -n 'contains -- -r (commandline -opc)' -a %s -d %s\n", ri.Config.Name, ri.Config.Path)
 	}
 
-	newRepo := repoInfo {}
-	newRepo.Config.Path = repoPath
-	newRepo.Config.Name = filepath.Base(repoPath)
-	fmt.Printf("NEW REPO %v\n", newRepo);
-
-	database = append(database, &newRepo)
-
-	return dumpDatabase("newRepos.yml" , database )
+	return nil
 }
 
 func main() {
 
 	args := getArgs()
-	if args.addRepo != "" {
-		addRepo(args.addRepo)
-		return
-	}
 	if args.generateConfig {
 		generateConfig("")
 		return
@@ -333,10 +351,33 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	database, err := readDatabase(filepath.Join(home, ".repos.yml"))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	if args.listNames {
+		for _, ri := range database {
+			fmt.Printf("%s\n", ri.Config.Name)
+		}
+		return
+	}
+	if args.shell != "" {
+		err := generateShellAutocomplete(database, args, os.Stdout)
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	if args.repo != "" {
+		exitCode, err := newShellInRepo(database, args.repo)
+		if err != nil {
+			panic(err)
+		}
+		os.Exit(exitCode)
 	}
 
 	sem := make(chan struct{}, args.njobs)
@@ -346,7 +387,7 @@ func main() {
 		wg.Add(1)
 		go func(r *repoInfo) {
 			sem <- struct{}{}
-			defer func(){ <-sem}()
+			defer func() { <-sem }()
 			var err error
 			r.State, err = r.Config.getState(!args.noFetch)
 			if err != nil {
