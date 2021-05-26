@@ -298,7 +298,7 @@ func newShellInDir(directory string) (int, error) {
 	if err != nil {
 		return 1, fmt.Errorf("could not cd to '%s', : %v", directory, err)
 	}
-	cmd := exec.Command("/bin/zsh", "-l")
+	cmd := exec.Command("/bin/bash", "-l")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
