@@ -392,6 +392,7 @@ func main() {
 			r.State, err = r.Config.getState(!args.noFetch)
 			if err != nil {
 				fmt.Println(err)
+				r.State.RemoteState = RemoteStateUnknown
 			}
 			infoCh <- r
 		}(ri)
@@ -429,11 +430,11 @@ func printRepoInfo(ri *repoInfo) {
 
 	switch ri.State.RemoteState {
 	case RemoteStateNormal:
-		fmt.Printf("%8s ", "")
+		fmt.Printf("%11s ", "Up to Date")
 	case RemoteStateBehind, RemoteStateAhead, RemoteStateDiverged:
-		fmt.Printf("\033[1;35m%8v\033[0m ", ri.State.RemoteState)
+		fmt.Printf("\033[1;35m%11v\033[0m ", ri.State.RemoteState)
 	case RemoteStateUnknown:
-		fmt.Printf("\033[1;37;41m%v\033[0m  ", ri.State.RemoteState)
+		fmt.Printf("\033[1;37;41m%11v\033[0m  ", ri.State.RemoteState)
 	}
 
 	if ri.State.StagedChanges && ri.State.Dirty {
