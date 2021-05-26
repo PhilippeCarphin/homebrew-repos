@@ -66,14 +66,18 @@ __repos_get_current_option(){
 }
 
 __suggest_repos_options(){
-	candidates=" -generate-config -j -path"
+	candidates=" Usage -generate-config -j -list-names -list-repos -no-fetch -path -r"
 }
 
 __suggest_repos_args_for_option(){
 	case "$1" in
 		-generate-config) __suggest_repos_key_generate_config_values ;;
 		-j) __suggest_repos_key_j_values ;;
+		-list-names) __suggest_repos_key_list_names_values ;;
+		-list-repos) __suggest_repos_key_list_repos_values ;;
+		-no-fetch) __suggest_repos_key_no_fetch_values ;;
 		-path) __suggest_repos_key_path_values ;;
+		-r) __suggest_repos_key_r_values ;;
 	esac
 }
 
@@ -85,8 +89,24 @@ __suggest_repos_key_j_values(){
 	candidates=""
 }
 
+__suggest_repos_key_list_names_values(){
+	candidates=""
+}
+
+__suggest_repos_key_list_repos_values(){
+	candidates=""
+}
+
+__suggest_repos_key_no_fetch_values(){
+	candidates=""
+}
+
 __suggest_repos_key_path_values(){
-	candidates="red green blue"
+	candidates=""
+}
+
+__suggest_repos_key_r_values(){
+    candidates="$(repos -list-names)"
 }
 
 complete -o default -F __complete_repos repos
