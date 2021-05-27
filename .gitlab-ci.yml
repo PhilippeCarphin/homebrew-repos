@@ -31,3 +31,6 @@ build:
     - export GOOS=windows  GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
   artifacts:
     untracked: true
+    paths:
+      - completions
+      - use-repos.bash
