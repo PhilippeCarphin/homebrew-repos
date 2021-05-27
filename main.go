@@ -303,7 +303,21 @@ func newShellInDir(directory string) (int, error) {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	fmt.Printf("\033[1;37m==> \033[0mStarting new shell in \033[1;32m%s\033[0m\n", directory)
-	cmd.Env = append(os.Environ(), "REPOS_CONTEXT="+directory)
+	baseEnv := []string{
+		"DISPLAY=" + os.Getenv("DISPLAY"),
+		"HOME=" + os.Getenv("HOME"),
+		"LANG=" + os.Getenv("LANG"),
+		"LC_TERMINAL=" + os.Getenv("LC_TERMINAL"),
+		"LC_TERMINAL_VERSION=" + os.Getenv("LC_TERMINAL_VERSION"),
+		"LOGNAME=" + os.Getenv("LOGNAME"),
+		"SHELL=" + os.Getenv("SHELL"),
+		"SSH_CLIENT=" + os.Getenv("SSH_CLIENT"),
+		"SSH_CONNECTION=" + os.Getenv("SSH_CONNECTION"),
+		"TERM=" + os.Getenv("TERM"),
+		"TMUX=" + os.Getenv("TMUX"),
+		"USER=" + os.Getenv("USER"),
+	}
+	cmd.Env = append(baseEnv, "REPOS_CONTEXT="+directory)
 	err = cmd.Run()
 	fmt.Printf("\033[1;37m==> \033[0mBack from new shell in \033[1;32m%s\033[0m\n", directory)
 	return cmd.ProcessState.ExitCode(), nil
