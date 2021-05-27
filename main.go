@@ -253,6 +253,12 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 		}
 	}
 
+	remoteState, err := r.getRemoteState()
+	if err != nil {
+		return state, err
+	}
+	state.RemoteState = remoteState
+
 	state.Dirty, err = r.hasUnstagedChanges()
 	if err != nil {
 		return state, err
