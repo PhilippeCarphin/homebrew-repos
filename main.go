@@ -33,6 +33,7 @@ type args struct {
 	listNames      bool
 	listRepos      bool
 	shell          string
+	getDir         string
 }
 
 func getArgs() args {
@@ -48,6 +49,7 @@ func getArgs() args {
 	flag.BoolVar(&a.listNames, "list-names", false, "Output list of names on a single line for autocomplete")
 	flag.BoolVar(&a.listRepos, "list-repos", false, "Output list of names and paths")
 	flag.StringVar(&a.shell, "shell", "", "Output autocomplete script for given shell")
+	flag.StringVar(&a.getDir, "get-dir", "", "Change to repo")
 	flag.Parse()
 
 	return a
@@ -347,6 +349,16 @@ func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) e
 	return nil
 }
 
+func getRepoDir(database []*repoInfo, repoName string) (string, error) {
+	for _, ri := range database {
+		if ri.Config.Name == repoName {
+
+			return ri.Config.Path, nil
+		}
+	}
+	return "", fmt.Errorf("no repo with name '%s' in database", repoName)
+}
+
 func main() {
 
 	args := getArgs()
@@ -399,6 +411,14 @@ func main() {
 			panic(err)
 		}
 		os.Exit(exitCode)
+	}
+	if args.getDir != "" {
+		repoDir, err := getRepoDir(database, args.getDir)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(repoDir)
+		return
 	}
 
 	sem := make(chan struct{}, args.njobs)
