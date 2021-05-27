@@ -310,6 +310,7 @@ func newShellInDir(directory string) (int, error) {
 		"LC_TERMINAL=" + os.Getenv("LC_TERMINAL"),
 		"LC_TERMINAL_VERSION=" + os.Getenv("LC_TERMINAL_VERSION"),
 		"LOGNAME=" + os.Getenv("LOGNAME"),
+		"MAIL=" + os.Getenv("MAIL"),
 		"SHELL=" + os.Getenv("SHELL"),
 		"SSH_CLIENT=" + os.Getenv("SSH_CLIENT"),
 		"SSH_CONNECTION=" + os.Getenv("SSH_CONNECTION"),
