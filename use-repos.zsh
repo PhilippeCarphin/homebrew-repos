@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 this_file=$(python3 -c "import os; print(os.path.realpath('$_'))")
-echo "this_file = $this_file"
+this_dir=$(cd $(dirname ${this_file}) && pwd)
 
 if ! which repos >/dev/null ; then
     echo "this_dir = $this_dir"
