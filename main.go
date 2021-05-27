@@ -391,6 +391,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if len(database) == 0 {
+		fmt.Printf("\033[33mWARNING\033[0mNo repos listed in $HOME/.repos.yml\n")
+	}
+
 	if args.listNames {
 		for _, ri := range database {
 			fmt.Printf("%s\n", ri.Config.Name)
