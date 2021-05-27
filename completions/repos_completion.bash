@@ -39,9 +39,8 @@ __suggest_repos_candidates(){
 	if [[ "$option" != "" ]] ; then
 		__suggest_repos_args_for_option ${option}
 	else
-		if [[ "$cur" = -* ]] ; then
-			__suggest_repos_options
-		fi
+		# No positional arguments yet
+		__suggest_repos_options
 	fi
 
 	echo "$candidates"
