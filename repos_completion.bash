@@ -112,7 +112,9 @@ __suggest_repos_key_r_values(){
 complete -o default -F __complete_repos repos
 
 function rcd(){
-    eval cd $(repos -get-dir $1)
+    local dir $(repos -get-dir $1)
+    echo "[33mcd $dir[0m"
+    cd $dir
 }
 
 __complete_rcd(){
