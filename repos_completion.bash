@@ -110,3 +110,17 @@ __suggest_repos_key_r_values(){
 }
 
 complete -o default -F __complete_repos repos
+
+function rcd(){
+    eval cd $(repos -get-dir $1)
+}
+
+__complete_rcd(){
+	COMPREPLY=()
+	# We use the current word to filter out suggestions
+	local cur="${COMP_WORDS[COMP_CWORD]}"
+	# Compgen: takes the list of candidates and selects those matching ${cur}.
+	# Once COMPREPLY is set, the shell does the rest.
+	COMPREPLY=( $(compgen -W "$(repos -list-names)" -- ${cur}))
+}
+complete -o default -F __complete_rcd rcd
