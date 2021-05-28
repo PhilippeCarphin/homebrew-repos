@@ -34,3 +34,4 @@ build:
     paths:
       - completions
       - use-repos.bash
+      - use-repos.zsh
