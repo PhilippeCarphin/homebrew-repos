@@ -5,7 +5,7 @@ compinit
 
 compdef _rcd rcd
 rcd(){
-    dir=$(repos -get-dir $1)
+    local dir=$(repos -get-dir $1)
     echo "[33mcd $dir[0m"
     cd ${dir}
 }
