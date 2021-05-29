@@ -34,7 +34,9 @@ type args struct {
 	listRepos      bool
 	shell          string
 	getDir         string
+	configFile     string
 }
+
 
 func getArgs() args {
 
@@ -50,6 +52,7 @@ func getArgs() args {
 	flag.BoolVar(&a.listRepos, "list-repos", false, "Output list of names and paths")
 	flag.StringVar(&a.shell, "shell", "", "Output autocomplete script for given shell")
 	flag.StringVar(&a.getDir, "get-dir", "", "Change to repo")
+	flag.StringVar(&a.configFile, "F", "", "Change to repo")
 	flag.Parse()
 
 	return a
@@ -385,7 +388,14 @@ func main() {
 		panic(err)
 	}
 
-	database, err := readDatabase(filepath.Join(home, ".repos.yml"))
+	var databaseFile string
+	if args.configFile != "" {
+		databaseFile = args.configFile
+	} else {
+		databaseFile = filepath.Join(home, ".repos.yml")
+	}
+
+	database, err := readDatabase(databaseFile)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
