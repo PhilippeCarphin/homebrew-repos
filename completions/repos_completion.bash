@@ -20,10 +20,12 @@ __complete_repos() {
 
 	# We use the current word to filter out suggestions
 	local cur="${COMP_WORDS[COMP_CWORD]}"
+     local candidates=""
+     __suggest_repos_candidates
 
 	# Compgen: takes the list of candidates and selects those matching ${cur}.
 	# Once COMPREPLY is set, the shell does the rest.
-	COMPREPLY=( $(compgen -W "$(__suggest_repos_candidates)" -- ${cur}))
+	COMPREPLY=( $(compgen -W "${candidates}" -- ${cur}))
 
 	return 0
 }
@@ -42,8 +44,6 @@ __suggest_repos_candidates(){
 		# No positional arguments yet
 		__suggest_repos_options
 	fi
-
-	echo "$candidates"
 }
 
 __repos_dash_dash_in_words(){
