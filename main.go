@@ -35,6 +35,8 @@ type args struct {
 	shell          string
 	getDir         string
 	configFile     string
+	recent         bool
+	days           int
 }
 
 
@@ -53,6 +55,8 @@ func getArgs() args {
 	flag.StringVar(&a.shell, "shell", "", "Output autocomplete script for given shell")
 	flag.StringVar(&a.getDir, "get-dir", "", "Change to repo")
 	flag.StringVar(&a.configFile, "F", "", "Change to repo")
+	flag.BoolVar(&a.recent, "recent", false, "Show today and yesterday's commits for all repos")
+	flag.IntVar(&a.days, "days", 1, "Show today and yesterday's commits for all repos")
 	flag.Parse()
 
 	return a
@@ -166,6 +170,18 @@ func dumpDatabase(filename string, database []*repoInfo) {
 		panic(err)
 	}
 	ioutil.WriteFile(filename, yamlOut, 0644)
+}
+
+func showRecentCommits(database []*repoInfo, args args) error {
+	for _, ri := range database {
+		cmd := ri.Config.gitCommand("recent", "-d", fmt.Sprintf("%d", (args.days)))
+		out, err := cmd.Output()
+		if err != nil {
+			return fmt.Errorf("Could not get recent commits for %s: %v", ri.Config.Path, err)
+		}
+		fmt.Print(string(out))
+	}
+	return nil
 }
 
 func generateConfig(filename string) {
@@ -305,6 +321,7 @@ func getDummyRepo() *repoInfo {
 }
 func newShellInDir(directory string) (int, error) {
 
+	fmt.Fprintf(os.Stderr, "\033[33mWARNING: This is a beta feature, maybe use rcd instead\033[0m\n")
 	err := os.Chdir(directory)
 	if err != nil {
 		return 1, fmt.Errorf("could not cd to '%s', : %v", directory, err)
@@ -399,6 +416,11 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	if args.recent {
+		showRecentCommits(database, args)
+		return
 	}
 
 	if len(database) == 0 {
