@@ -34,7 +34,10 @@ class Repo:
         if today or yesterday:
             print(f"\033[1;4;35mCommits made today on {self.repo_dir}\033[0m")
         else:
-            print(f"No commits today or yesterday for {self.repo_dir}")
+            if days != 1:
+                print(f"No commits between today and {days} days ago for {self.repo_dir}")
+            else:
+                print(f"No commits today or yesterday for {self.repo_dir}")
         if today:
             print(f"\033[1;4;32mToday's commits\033[0m")
             for c in sorted(today, key=lambda c: c["date"]):
