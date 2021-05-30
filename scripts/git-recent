@@ -27,11 +27,13 @@ class Repo:
         yesterday = now - datetime.timedelta(days=1)
         before_yesterday = now - datetime.timedelta(days=2)
 
-        today = self.commits_between_dates(yesterday, now)
-        yesterday = self.commits_between_dates(before_yesterday, yesterday)
+        today = list(self.commits_between_dates(yesterday, now))
+        yesterday = list(self.commits_between_dates(before_yesterday, yesterday))
 
         if today or yesterday:
             print(f"\033[1;4;35mCommits made today on {self.repo_dir}\033[0m")
+        else:
+            print(f"No commits today or yesterday for {self.repo_dir}")
         if today:
             print(f"\033[1;4;32mToday's commits\033[0m")
             for c in sorted(today, key=lambda c: c["date"]):
@@ -56,16 +58,8 @@ def get_commits_gen(repo_dir):
         }
 
 def main():
-
     repo_dir = os.getcwd()
-    #pprint.pprint(get_commits(repo_dir))
     repo = Repo(repo_dir)
-
-    now = datetime.datetime.now()
-    before = now + datetime.timedelta(days=-2)
-    selected_commits = list(repo.commits_between_dates(before, now))
-    selected_commits = sorted(selected_commits, key=lambda c: c["date"])
-    pprint.pprint(selected_commits)
     repo.print_recent_commits()
 
 if __name__ == "__main__":
