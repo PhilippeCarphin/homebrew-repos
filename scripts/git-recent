@@ -14,12 +14,11 @@ case $(uname) in
         today=$(date $FORMAT)
         ;;
 esac
-echo "yesterday = $yesterday"
-echo "today = $today"
+
 awk_yesterday="\"${yesterday}\" <= \$0 && \$0 <= \"${today}\""
 awk_today="\"${today}\" <= \$0 && \$0 <= \"${tomorrow}\""
-echo "awk condition = '$awk_condition'"
 
+echo "[1;37mRecent commits for $PWD[0m"
 echo "[32mYesterday's commits[0m"
 git log --date=iso --pretty=format:"$LOG_FORMAT" | awk "${awk_yesterday}"
 echo "[32mToday's commits[0m"
