@@ -1,25 +1,75 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import os
+import sys
+import datetime
+import subprocess
+import pprint
 
-FORMAT="+%Y-%m-%d"
-LOG_FORMAT="%ad %s"
-case $(uname) in
-    Darwin)
-        yesterday=$(date -v "-1d" "$FORMAT")
-        tomorrow=$(date -v "+1d" $FORMAT)
-        today=$(date $FORMAT)
-        ;;
-    Linux)
-        yesterday=$(date -d "-1 day" "$FORMAT")
-        tomorrow=$(date -d "+1 day" $FORMAT)
-        today=$(date $FORMAT)
-        ;;
-esac
 
-awk_yesterday="\"${yesterday}\" <= \$0 && \$0 <= \"${today}\""
-awk_today="\"${today}\" <= \$0 && \$0 <= \"${tomorrow}\""
+class Repo:
+    def __init__(self, repo_dir):
+        self.repo_dir = repo_dir
+        self.commits = list(get_commits_gen(repo_dir))
 
-echo "[1;4;35mRecent commits for [1;35m$PWD[0m"
-echo "[32mToday's commits[0m"
-git log --date=iso --pretty=format:"$LOG_FORMAT" | awk "${awk_today}"
-echo "[33mYesterday's commits[0m"
-git log --date=iso --pretty=format:"$LOG_FORMAT" | awk "${awk_yesterday}"
+    def commits_between_dates(self, begin, end):
+        for c in self.commits:
+            date = c["date"]
+            if begin <= date and date <= end:
+                yield c
+    def organize_by_day(self):
+        """Getting today's commits and yesterday's commits in two different
+        lists is done by going over the whole list of commits twice.  If this
+        becomes a problem, I can organize the commits by day in a single pass
+        then get the commits for today and yesterday."""
+        pass
+    def print_recent_commits(self):
+        now = datetime.datetime.today()
+        yesterday = now - datetime.timedelta(days=1)
+        before_yesterday = now - datetime.timedelta(days=2)
+
+        today = self.commits_between_dates(yesterday, now)
+        yesterday = self.commits_between_dates(before_yesterday, yesterday)
+
+        if today or yesterday:
+            print(f"\033[1;4;35mCommits made today on {self.repo_dir}\033[0m")
+        if today:
+            print(f"\033[1;4;32mToday's commits\033[0m")
+            for c in sorted(today, key=lambda c: c["date"]):
+                print(f"\033[33m{c['hash'][:6]}\033[0m {c['date']} - \033[32m{c['message']}\033[0m")
+        if yesterday:
+            print(f"\033[1;4;32mYesterday's commits\033[0m")
+            for c in sorted(yesterday, key=lambda c: c["date"]):
+                print(f"\033[33m{c['hash'][:6]}\033[0m {c['date']} - \033[32m{c['message']}\033[0m")
+
+
+def get_commits_gen(repo_dir):
+    result = subprocess.run(
+        f'cd {repo_dir} && git log --date=unix --pretty=format:"%ad %H %s"',
+        shell=True, universal_newlines=True, stdout=subprocess.PIPE
+    )
+    for l in result.stdout.splitlines():
+        words = l.split()
+        yield {
+            "date": datetime.datetime.fromtimestamp(int(words[0])),
+            "hash": words[1],
+            "message": ' '.join(words[2:]),
+        }
+
+def main():
+
+    repo_dir = os.getcwd()
+    #pprint.pprint(get_commits(repo_dir))
+    repo = Repo(repo_dir)
+
+    now = datetime.datetime.now()
+    before = now + datetime.timedelta(days=-2)
+    selected_commits = list(repo.commits_between_dates(before, now))
+    selected_commits = sorted(selected_commits, key=lambda c: c["date"])
+    pprint.pprint(selected_commits)
+    repo.print_recent_commits()
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+
+
