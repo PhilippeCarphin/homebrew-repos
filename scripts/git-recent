@@ -18,8 +18,8 @@ esac
 awk_yesterday="\"${yesterday}\" <= \$0 && \$0 <= \"${today}\""
 awk_today="\"${today}\" <= \$0 && \$0 <= \"${tomorrow}\""
 
-echo "[1;37mRecent commits for $PWD[0m"
-echo "[32mYesterday's commits[0m"
-git log --date=iso --pretty=format:"$LOG_FORMAT" | awk "${awk_yesterday}"
+echo "[1;4;37mRecent commits for [1;35m$PWD[0m"
 echo "[32mToday's commits[0m"
 git log --date=iso --pretty=format:"$LOG_FORMAT" | awk "${awk_today}"
+echo "[33mYesterday's commits[0m"
+git log --date=iso --pretty=format:"$LOG_FORMAT" | awk "${awk_yesterday}"
