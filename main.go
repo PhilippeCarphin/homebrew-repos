@@ -177,7 +177,7 @@ func showRecentCommits(database []*repoInfo, args args) error {
 		cmd := ri.Config.gitCommand("recent", "-d", fmt.Sprintf("%d", (args.days)))
 		out, err := cmd.Output()
 		if err != nil {
-			return fmt.Errorf("Could not get recent commits for %s: %v", ri.Config.Path, err)
+			fmt.Printf("Could not get recent commits for %s: %v\n", ri.Config.Path, err)
 		}
 		fmt.Print(string(out))
 	}
