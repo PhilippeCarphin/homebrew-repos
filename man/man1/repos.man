@@ -1,0 +1,25 @@
+.TH "Repos(1) Manual" "1" 
+.SH "NAME"
+.PP
+The name of the command or function, followed by a one-line description of what it does.
+.SH "SYNOPSIS"
+.PP
+In the case of a command, you get a formal description of how to run it and what command line options it takes.
+.SH "DESCRIPTION"
+.PP
+A textual description of the functioning of the command or function.
+.SH "EXAMPLES"
+.PP
+Some examples of common usage.
+.SH "SEE ALSO"
+.PP
+A list of related commands or functions.
+.SH "BUGS"
+.PP
+List known bugs.
+.SH "AUTHOR"
+.PP
+Specify your contact information.
+.SH "COPYRIGHT"
+.PP
+Specify your copyright information.
