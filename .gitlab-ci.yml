@@ -24,16 +24,16 @@ build:
   script:
     - export PATH=$HOME/.local/bin:$PATH
     - go version
+    - make PREFIX=$PWD/install install
+    - ls
     - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=linux    GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=linux    GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=windows  GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
-    - make PREFIX=$PWD/install install
     - cp repos-darwin* install/bin/
     - cp repos-linux* install/bin/
     - cp repos-windows* install/bin/
   artifacts:
-    untracked: true
     paths:
       - install
