@@ -31,8 +31,6 @@ type args struct {
 	noFetch        bool
 	repo           string
 	listNames      bool
-	listRepos      bool
-	shell          string
 	getDir         string
 	configFile     string
 	recent         bool
@@ -46,17 +44,15 @@ func getArgs() args {
 
 	a.command = flag.Arg(0)
 	flag.StringVar(&a.path, "path", "", "Specify a single repo to give info for")
-	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.repos.yml file content on STDOUT.")
+	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.config/repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
-	flag.StringVar(&a.repo, "r", "", "Repo to go to")
+	flag.StringVar(&a.repo, "r", "", "Start new shell with cleared environment in repo")
 	flag.BoolVar(&a.listNames, "list-names", false, "Output list of names on a single line for autocomplete")
-	flag.BoolVar(&a.listRepos, "list-repos", false, "Output list of names and paths")
-	flag.StringVar(&a.shell, "shell", "", "Output autocomplete script for given shell")
-	flag.StringVar(&a.getDir, "get-dir", "", "Change to repo")
-	flag.StringVar(&a.configFile, "F", "", "Change to repo")
+	flag.StringVar(&a.getDir, "get-dir", "", "Get directory of repo on STDOUT")
+	flag.StringVar(&a.configFile, "F", "", "Use a different config file that ~/.config/repos.yml")
 	flag.BoolVar(&a.recent, "recent", false, "Show today and yesterday's commits for all repos")
-	flag.IntVar(&a.days, "days", 1, "Show today and yesterday's commits for all repos")
+	flag.IntVar(&a.days, "days", 1, "Go back more than one day before yesterday when using option -recent")
 	flag.Parse()
 
 	return a
@@ -430,13 +426,6 @@ func main() {
 	if args.listNames {
 		for _, ri := range database {
 			fmt.Printf("%s\n", ri.Config.Name)
-		}
-		return
-	}
-	if args.shell != "" {
-		err := generateShellAutocomplete(database, args, os.Stdout)
-		if err != nil {
-			panic(err)
 		}
 		return
 	}
