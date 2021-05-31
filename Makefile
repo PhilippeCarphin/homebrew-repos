@@ -1,4 +1,4 @@
-TRG=repo-manager
+TRG=repos
 CMD=repos
 
 all:$(TRG)
@@ -6,7 +6,12 @@ all:$(TRG)
 $(TRG):main.go
 	go build
 test:$(TRG)
-	./repo-manager
+	./repos
+
+install:$(TRG)
+	install -D repos $(DESTDIR)$(PREFIX)/bin/repos
+	install -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
+	install -D completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/bash_completion/repos_completion.bash
 
 dist:$(TRG)
 	go build
