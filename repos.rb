@@ -15,7 +15,7 @@ class Repos < Formula
     # ENV.deparallelize  # if your formula fails when building in parallel
     # Remove unrecognized options if warned by configure
     # https://rubydoc.brew.sh/Formula.html#std_configure_args-instance_method
-    system "go", "build", buildpath
+    system "go", "build"
     bin.install "repos" => "repos"
     bin.install "scripts/git-recent" => "git-recent"
     man1.install "man/man1/repos.man" => "repos.1"
