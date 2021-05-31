@@ -2,6 +2,10 @@ image: golang:latest
 
 stages:
   - build
+
+before_script:
+  - apt-get update --yes
+  - apt-get install --yes dpkg
 variables:
   ORD_SOUMET_C: "40"
   ORD_SOUMET_T: "3600"
@@ -27,3 +31,8 @@ build:
   artifacts:
     paths:
       - install
+
+deb:
+  stage: build
+  script:
+    - which dpkg-buildpackage
