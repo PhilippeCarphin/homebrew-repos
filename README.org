@@ -30,6 +30,10 @@ cd ..
 sudo dpkg -i repos_0.1.0*.deb
 #+end_src
 
+I don't know how to have the completion scripts be "installed" so that they are
+sourced automatically without having to tell the user to add stuff in their
+=.basrc=.
+
 ** Manual
 
 #+begin_src 
@@ -72,6 +76,10 @@ It has binaries for
 - Linux arm64
 - Linux amd64
 - Windows x86_64
+  
+Add the =bin= directory to your PATH and source one of the completion scripts in
+=completions= in the setup script of your shell.
+
 * Using
 
 List your repos in =~/.config/repos.yml= like so:
