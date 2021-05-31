@@ -1,4 +1,4 @@
-.TH "Repos(1) Manual" "1" 
+.TH "Repos" "1" 
 .SH "NAME"
 .PP
 The name of the command or function, followed by a one-line description of what it does.
