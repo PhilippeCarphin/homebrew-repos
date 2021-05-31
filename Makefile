@@ -8,7 +8,7 @@ all:$(TRG)
 
 $(TRG):main.go
 	$(call make_echo_generate_file)
-	# $(at) go build
+	$(at) go build
 	true
 
 test:$(TRG)
