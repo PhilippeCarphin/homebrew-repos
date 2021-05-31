@@ -12,7 +12,45 @@ brew install --build-from-source repos
 #+end_src
 
 ** Linux
+*** Debian
 
+#+begin_src 
+git clone https://gitlab.com/philippecarphin/repos repos-0.1.0
+cd repos
+make
+make deb
+cd ..
+sudo dpkg -i repos_0.1.0*.deb
+#+end_src
+
+** Manual
+
+#+begin_src 
+git clone https://gitlab.com/philippecarphin/repos
+cd repos
+make
+make PREFIX=$PREFIX install
+#+end_src
+
+You want to have =$PREFIX/bin= in your path and you want to source
+=$PREFIX/etc/repos_completion.X= in the startup file of your shell.
+
+The content of =$PREFIX= after =make PREFIX=$PREFIX install= looks like:
+#+begin_example
+.
+└── usr
+    ├── bin
+    │   ├── git-recent
+    │   └── repos
+    ├── etc
+    │   ├── repos_completion.bash
+    │   ├── repos_completion.fish
+    │   └── repos_completion.zsh
+    └── share
+        └── man
+            └── man1
+                └── repos.1.gz
+#+end_example
 * Using
 
 List your repos in =~/.config/repos.yml= like so:
@@ -30,6 +68,30 @@ config:
 
 then run =repos=.
 
+If you source the shell completion script, you will also have a shell function
+=rcd REPO= which will =cd= to the directory of the repository.
+
+This function has autocompletion of repo names so pressing =<TAB><TAB>= lists
+your repos.
+
+
+#+begin_src shell :results output
+repos -h 2>&1
+#+end_src
+
+#+begin_example
+Usage of repos:
+  -generate-config
+    	Look for git repos in PWD and generate ~/.config/repos.yml file content on STDOUT.
+  -get-dir string
+    	Print directory associated repo
+  -j int
+    	Number of concurrent repos to do (default 1)
+  -list-names
+    	Output list of names on a single line for autocomplete
+  -no-fetch
+    	Disable auto-fetching
+#+end_example
 
 * Prebuilt distribution
 
@@ -39,4 +101,3 @@ Download the latest version built by CI:
 Use the right file for your OS and architecture.  If you are not sure, that
 means that you are on =amd64= (if your computer was =arm=, you would be aware of
 it).
-
