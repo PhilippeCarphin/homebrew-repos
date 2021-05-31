@@ -409,7 +409,7 @@ func main() {
 	if args.configFile != "" {
 		databaseFile = args.configFile
 	} else {
-		databaseFile = filepath.Join(home, ".repos.yml")
+		databaseFile = filepath.Join(home, ".config", "repos.yml")
 	}
 
 	database, err := readDatabase(databaseFile)
