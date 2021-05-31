@@ -27,12 +27,3 @@ build:
   artifacts:
     paths:
       - install
-
-deb:
-  stage: build
-  script:
-    - make deb
-    - cp ../*.deb ./
-  artifacts:
-    untracked: true
-

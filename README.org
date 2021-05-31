@@ -65,8 +65,7 @@ The content of =$PREFIX= after =make PREFIX=$PREFIX install= looks like:
 ** Prebuilt distribution
 
 Download the latest version built by CI:
-[[https://gitlab.com/philippecarphin/repos/-/archive/master/repos-master.tar.gz]]
-
+[[https://gitlab.com/philippecarphin/repos/-/jobs/artifacts/master/download?job=build]]
 In the bin directory, you will have to rename the right file for your OS and
 architecture to be =repos=.
 
