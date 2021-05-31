@@ -1,7 +1,6 @@
 image: golang:latest
 
 stages:
-  - test
   - build
 variables:
   ORD_SOUMET_C: "40"
@@ -9,15 +8,6 @@ variables:
   ORD_SOUMET_TMPFS: "5G"
   ORD_SOUMET_CM: "100G"
   ORD_SOUMET_SHELL: "/bin/bash"
-
-test:
-  stage: test
-  script:
-    - set +e
-    - go test ./...
-    - go run main.go -generate-config
-    - ln -s $PWD/Rename_to_.repos.yml ~/.repos.yml
-    - go run main.go || true
 
 build:
   stage: build
