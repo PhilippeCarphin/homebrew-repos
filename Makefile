@@ -7,7 +7,7 @@ PREFIX ?= /usr
 all:$(TRG)
 
 $(TRG):main.go
-	true
+	go build .
 test:$(TRG)
 	$(call make_echo_run_test,"Running $<")
 	$(at) ./repos
