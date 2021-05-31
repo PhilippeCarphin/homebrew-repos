@@ -14,8 +14,8 @@ class Repo:
 
     def commits_between_dates(self, begin, end):
         for c in self.commits:
-            date = c["date"]
-            if begin <= date and date <= end:
+            date = datetime.date.fromtimestamp(int(c["date"].timestamp()))
+            if begin < date and date <= end:
                 yield c
     def organize_by_day(self):
         """Getting today's commits and yesterday's commits in two different
@@ -24,7 +24,7 @@ class Repo:
         then get the commits for today and yesterday."""
         pass
     def print_recent_commits(self, days=1):
-        now = datetime.datetime.today()
+        now = datetime.date.today()
         yesterday = now - datetime.timedelta(days=1)
         before_yesterday = now - datetime.timedelta(days=1+days)
 
