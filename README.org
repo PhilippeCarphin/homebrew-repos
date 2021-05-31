@@ -1,6 +1,6 @@
 #+TITLE: Repos
 
-A tool that for getting a report on git repos listed in a =~/.repos.yml= file.
+A tool that for getting a report on git repos listed in a =~/.config/repos.yml= file.
 
 * Obtain
 
