@@ -1,10 +1,10 @@
 Source: repos
-Section: section
+Section: unknown
 Priority: extra
 Maintainer: <pi@localhost>
 Build-Depends: debhelper (>=9)
 Standards-Version: 3.9.8
-Homepage: https://gitlab.com/philippecarphin/repos
+Homepage: <insert the upstream URL, if relevant>
 
 Package: repos
 Architecture: any

@@ -4,10 +4,12 @@ Source: <url://example.com>
 #
 # Please double check copyright with the licensecheck(1) command.
 
-Files:     .gitignore
+Files:     .debmake
+           .gitignore
            .gitlab-ci.yml
            Makefile
            README.org
+           bin/git-recent
            completions/repos_completion.bash
            completions/repos_completion.fish
            completions/repos_completion.zsh
@@ -22,8 +24,15 @@ Files:     .gitignore
            scripts/git-recent
            use-repos.bash
            use-repos.zsh
+           usr/bin/git-recent
+           usr/etc/bash_completion/repos_completion.bash
 Copyright: __NO_COPYRIGHT_NOR_LICENSE__
 License:   __NO_COPYRIGHT_NOR_LICENSE__
+
+#----------------------------------------------------------------------------
+# huge files   (skipped):
+#         repos
+#         usr/bin/repos
 
 #----------------------------------------------------------------------------
 # Files marked as NO_LICENSE_TEXT_FOUND may be covered by the following
