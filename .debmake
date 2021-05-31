@@ -1,0 +1,12 @@
+# Target is the path where the package files will be installed (without leading
+# `/`)
+TARGET="usr/repos"
+
+# The source of the software
+HOMEPAGE="https://gitlab.com/philippecarphin/repos"
+
+# Short description (max. 80 characters)
+DESCRIPTION_SHORT="Tool for keeping track of repos states"
+
+# Long description will be broken to multiple lines (at 80 characters)
+DESCRIPTION_LONG="Tool for keeping track of git repos listed in ~/.config/repos.yml""
