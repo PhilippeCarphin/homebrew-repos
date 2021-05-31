@@ -29,9 +29,11 @@ build:
     - export GOOS=linux    GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=linux    GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=windows  GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
+    - make $PREFIX=$PWD/install
+    - cp repos-darwin* install/bin/
+    - cp repos-linux* install/bin/
+    - cp repos-windows* install/bin/
   artifacts:
     untracked: true
     paths:
-      - completions
-      - use-repos.bash
-      - use-repos.zsh
+      - install
