@@ -14,7 +14,9 @@ The autocomplete scripts will be in =/usr/local/completions= or in
 =/opt/homebrew/completions= depending on what kind of Mac you have.
 
 So something like =source /usr/local/completions/repos_completion.zsh= could go
-in your =.zshrc= (there are =.bash= and =.fish= completion files also).
+in your =~/.zshrc= (there are =.bash= and =.fish= completion files also).  On
+Macs, you would put =source /usr/local/completions/repos_completion.bash= inside
+the =~/.bash_profile=.
 
 ** Linux
 *** Debian
