@@ -40,14 +40,14 @@ class Repo:
                 print(f"No commits today or yesterday for {self.repo_dir}")
         if today:
             print(f"\033[1;4;32mToday's commits\033[0m")
-            for c in sorted(today, key=lambda c: c["date"]):
+            for c in sorted(today, key=lambda c: c["date"], reverse=True):
                 print(f"\033[33m{c['hash'][:6]}\033[0m {c['date']} - \033[32m{c['message']}\033[0m")
         if yesterday:
             past_header = "Yesterday's commits"
             if days != 1:
                 past_header = f"Commits between yesterday and {days} days ago"
             print(f"\033[1;4;32m{past_header}\033[0m")
-            for c in sorted(yesterday, key=lambda c: c["date"]):
+            for c in sorted(yesterday, key=lambda c: c["date"], reverse=True):
                 print(f"\033[33m{c['hash'][:6]}\033[0m {c['date']} - \033[32m{c['message']}\033[0m")
 
 
