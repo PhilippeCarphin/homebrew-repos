@@ -1,8 +1,0 @@
-Usage of repos:
--generate-config
--j
--list-names
--list-repos
--no-fetch
--path
--r
