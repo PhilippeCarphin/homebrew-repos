@@ -32,28 +32,28 @@ class Repo:
         yesterday = list(self.commits_between_dates(before_yesterday, yesterday))
 
         if today or yesterday:
-            print(f"\033[1;4;35mCommits made today on {self.repo_dir}\033[0m")
+            print("\033[1;4;35mCommits made today on {}\033[0m".format(self.repo_dir))
         else:
             if days != 1:
-                print(f"No commits between today and {days} days ago for {self.repo_dir}")
+                print("No commits between today and {} days ago for {}".format(days, self.repo_dir))
             else:
-                print(f"No commits today or yesterday for {self.repo_dir}")
+                print("No commits today or yesterday for {}".format(self.repo_dir))
         if today:
-            print(f"\033[1;4;32mToday's commits\033[0m")
+            print("\033[1;4;32mToday's commits\033[0m")
             for c in sorted(today, key=lambda c: c["date"], reverse=True):
-                print(f"\033[33m{c['hash'][:6]}\033[0m {c['date']} - \033[32m{c['message']}\033[0m")
+                print("\033[33m{}\033[0m {} - \033[32m{}\033[0m".format(c['hash'][:6], c['date'], c['message']))
         if yesterday:
             past_header = "Yesterday's commits"
             if days != 1:
-                past_header = f"Commits between yesterday and {days} days ago"
-            print(f"\033[1;4;32m{past_header}\033[0m")
+                past_header = "Commits between yesterday and {} days ago".format(days)
+            print("\033[1;4;32m{}\033[0m".format(past_header))
             for c in sorted(yesterday, key=lambda c: c["date"], reverse=True):
-                print(f"\033[33m{c['hash'][:6]}\033[0m {c['date']} - \033[32m{c['message']}\033[0m")
+                print("\033[33m{}\033[0m {} - \033[32m{}\033[0m".format(c['hash'][:6],c['date'],c['message']))
 
 
 def get_commits_gen(repo_dir):
     result = subprocess.run(
-        f'cd {repo_dir} && git log --date=unix --pretty=format:"%ad %H %s"',
+        'cd {} && git log --date=unix --pretty=format:"%ad %H %s"'.format(repo_dir),
         shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         check=True
     )
