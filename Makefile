@@ -8,7 +8,9 @@ all:$(TRG)
 
 $(TRG):main.go
 	$(call make_echo_generate_file)
-	$(at) go build
+	# $(at) go build
+	true
+
 test:$(TRG)
 	$(call make_echo_run_test,"Running $<")
 	$(at) ./repos
@@ -29,9 +31,9 @@ install:$(TRG)
 	install -D repos $(DESTDIR)$(PREFIX)/bin/repos
 	install -D man/man1/repos.man $(DESTDIR)$(PREFIX)/share/man/man1/repos.1
 	install -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
-	install -D completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/repos_completion.bash
-	install -D completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/repos_completion.fish
-	install -D completions/repos_completion.zsh  $(DESTDIR)$(PREFIX)/etc/repos_completion.zsh
+	install -D --mode 644 completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/repos_completion.bash
+	install -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/repos_completion.fish
+	install -D --mode 644 completions/repos_completion.zsh  $(DESTDIR)$(PREFIX)/etc/repos_completion.zsh
 
 dist:$(TRG)
 	go build
