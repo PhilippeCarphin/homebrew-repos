@@ -4,7 +4,7 @@ CMD=repos
 all:$(TRG)
 
 $(TRG):main.go
-	go build
+	true
 test:$(TRG)
 	./repos
 
