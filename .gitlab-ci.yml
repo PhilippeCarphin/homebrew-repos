@@ -34,5 +34,5 @@ deb:
     - make deb
     - cp ../*.deb ./
   artifacts:
-    paths:
-      - *.deb
+    untracked: true
+
