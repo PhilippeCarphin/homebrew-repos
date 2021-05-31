@@ -420,7 +420,7 @@ func main() {
 	}
 
 	if len(database) == 0 {
-		fmt.Printf("\033[33mWARNING\033[0mNo repos listed in $HOME/.repos.yml\n")
+		fmt.Printf("\033[33mWARNING\033[0m No repos listed in $HOME/.repos.yml\n")
 	}
 
 	if args.listNames {
