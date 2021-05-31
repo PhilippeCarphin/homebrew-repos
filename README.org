@@ -1,22 +1,21 @@
 #+TITLE: Repos
 
-A tool that checks on all your repos.
+A tool that for getting a report on git repos listed in a =~/.repos.yml= file.
 
-#+begin_example
-$ repos
-ci.fstcomp       Clean No untracked files 406  Hours
-linkcgo          Dirty Untracked Files    404  Hours
-go.voir          Dirty Untracked Files    436  Hours
-#+end_example
+* Obtain
 
-configured in a =~/.repos.yml= file.
+** MacOS
 
-* Install and use
+#+begin_src shell
+brew tap philippecarphin/repos
+brew install --build-from-source repos
+#+end_src
 
-Get the binary by building or downloading (see next sections).  Put it somewhere in your path.
+** Linux
 
-Create a =~/.repos.yml= file like this:
+* Using
 
+List your repos in =~/.config/repos.yml= like so:
 #+begin_src yaml
 repos:
   RepoName:
@@ -29,14 +28,10 @@ config:
     # Default values for repo
 #+end_src
 
-and simply run the binary that you built or downloaded.
-
-Note: I don't check if the directory is a git repo.  So if it exists and is not
-one, then my program will be confused.  If the path doesn't exist, you will get
-a nice error message.
+then run =repos=.
 
 
-* Download
+* Prebuilt distribution
 
 Download the latest version built by CI:
 [[https://gitlab.com/philippecarphin/repos/-/jobs/artifacts/master/download?job=build]]
@@ -44,12 +39,4 @@ Download the latest version built by CI:
 Use the right file for your OS and architecture.  If you are not sure, that
 means that you are on =amd64= (if your computer was =arm=, you would be aware of
 it).
-
-* Build
-
-#+begin_src shell
-git clone https://gitlab.com/philippecarphin/repos
-cd repos
-go build
-#+end_src
 
