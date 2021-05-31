@@ -4,3 +4,4 @@ repo-manager
 repos
 bin
 usr
+debian/*.log
