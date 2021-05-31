@@ -8,6 +8,13 @@ $(TRG):main.go
 test:$(TRG)
 	./repos
 
+../repos-0.1.0.tar.gz:
+	rm -f $@
+	tar -zcf $@ .
+	debmake
+deb:../repos-0.1.0.tar.gz
+	debuild --no-lintian -us -uc
+
 install:$(TRG)
 	install -D repos $(DESTDIR)$(PREFIX)/bin/repos
 	install -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
