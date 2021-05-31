@@ -1,3 +1,4 @@
+include colors.mk
 TRG=repos
 CMD=repos
 
@@ -8,17 +9,20 @@ all:$(TRG)
 $(TRG):main.go
 	true
 test:$(TRG)
-	./repos
+	$(call make_echo_run_test,"Running $<")
+	$(at) ./repos
 
 ../repos-0.1.0.tar.gz:
-	rm -f $@
-	tar -zcf $@ .
-	debmake
+	$(call make_echo_color_bold,blue,Initializing debian package with debmake)
+	$(at) rm -f $@
+	$(at) tar -zcf $@ .
+	$(at) debmake
 deb:../repos-0.1.0.tar.gz
-	debuild --no-lintian -us -uc
+	$(call make_echo_color_bold,blue,Creating debian package with debuild)
+	$(at) debuild --no-lintian -us -uc
 
 debclean:
-	rm -f ../repos-0.1.0.tar.gz
+	$(at) rm -f ../repos-0.1.0.tar.gz
 
 install:$(TRG)
 	install -D repos $(DESTDIR)$(PREFIX)/bin/repos
