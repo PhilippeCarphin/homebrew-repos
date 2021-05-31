@@ -3,7 +3,6 @@
 A tool that for getting a report on git repos listed in a =~/.config/repos.yml= file.
 
 * Obtain
-
 ** MacOS
 
 #+begin_src shell
@@ -51,6 +50,20 @@ The content of =$PREFIX= after =make PREFIX=$PREFIX install= looks like:
             └── man1
                 └── repos.1.gz
 #+end_example
+** Prebuilt distribution
+
+Download the latest version built by CI:
+[[https://gitlab.com/philippecarphin/repos/-/archive/master/repos-master.tar.gz]]
+
+In the bin directory, you will have to rename the right file for your OS and
+architecture to be =repos=.
+
+It has binaries for
+- MacOS arm64
+- MacOS amd64
+- Linux arm64
+- Linux amd64
+- Windows x86_64
 * Using
 
 List your repos in =~/.config/repos.yml= like so:
@@ -93,11 +106,3 @@ Usage of repos:
     	Disable auto-fetching
 #+end_example
 
-* Prebuilt distribution
-
-Download the latest version built by CI:
-[[https://gitlab.com/philippecarphin/repos/-/jobs/artifacts/master/download?job=build]]
-
-Use the right file for your OS and architecture.  If you are not sure, that
-means that you are on =amd64= (if your computer was =arm=, you would be aware of
-it).
