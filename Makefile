@@ -39,8 +39,10 @@ install: $(TRG)
 	$(INSTALL) -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/repos_completion.fish
 	$(INSTALL) -D --mode 644 completions/repos_completion.zsh  $(DESTDIR)$(PREFIX)/etc/repos_completion.zsh
 
+# NOTE:I don't use variables with 'rm -rf' in makefiles
 clean:
 	rm -f *.ssm
+	rm -f $(TRG)
 	rm -rf repos_*_all
 	rm -rf repos.ssmd
 
