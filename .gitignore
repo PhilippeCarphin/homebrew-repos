@@ -8,3 +8,4 @@ debian/*.log
 *.ssm
 repos*_all
 *.ssmd
+localinstall
