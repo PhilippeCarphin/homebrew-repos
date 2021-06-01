@@ -59,7 +59,7 @@ $(ssm_package).ssm: $(ssm_package)
 	$(call make_echo_color_bold,green,Building ssm package $@)
 	$(at) tar -cf $@ $(ssm_package)
 
-install: $(TRG))
+install: $(TRG)
 	$(INSTALL) -D repos $(DESTDIR)$(PREFIX)/bin/repos
 	$(INSTALL) -D man/man1/repos.man $(DESTDIR)$(PREFIX)/share/man/man1/repos.1
 	$(INSTALL) -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
