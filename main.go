@@ -463,7 +463,7 @@ func main() {
 			infoCh <- r
 		}(ri)
 	}
-
+	printRepoInfoHeader()
 	go func(wg *sync.WaitGroup) {
 		for ri := range infoCh {
 			printRepoInfo(ri)
@@ -473,6 +473,7 @@ func main() {
 
 	wg.Wait()
 }
+
 
 func (rs RemoteState) String() string {
 	switch rs {
@@ -490,6 +491,9 @@ func (rs RemoteState) String() string {
 	return "UNKNOWN"
 }
 
+func printRepoInfoHeader(){
+	fmt.Printf("REPO                       REMOTE STATE                 STATUS                    TSLC     COMMENT\n")
+}
 func printRepoInfo(ri *repoInfo) {
 
 	fmt.Printf("\033[;1m%-28s\033[0m", ri.Config.Name)
