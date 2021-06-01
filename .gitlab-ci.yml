@@ -3,22 +3,13 @@ image: golang:latest
 stages:
   - build
 
-before_script:
-  - apt-get update --yes
-  - apt-get install --yes dpkg
-variables:
-  ORD_SOUMET_C: "40"
-  ORD_SOUMET_T: "3600"
-  ORD_SOUMET_TMPFS: "5G"
-  ORD_SOUMET_CM: "100G"
-  ORD_SOUMET_SHELL: "/bin/bash"
-
 build:
   stage: build
   script:
     - export PATH=$HOME/.local/bin:$PATH
     - go version
     - make PREFIX=$PWD/install install
+    - make ssm
     - ls
     - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
@@ -31,8 +22,4 @@ build:
   artifacts:
     paths:
       - install
-
-deb:
-  stage: build
-  script:
-    - which dpkg-buildpackage
+      - repos_0.1.0_all.ssm
