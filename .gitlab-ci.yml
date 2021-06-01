@@ -3,6 +3,9 @@ image: golang:latest
 stages:
   - build
 
+before_script:
+  - apt-get install --yes python3
+
 build:
   stage: build
   script:
