@@ -125,3 +125,12 @@ __complete_rcd(){
 	COMPREPLY=( $(compgen -W "$(repos -list-names)" -- ${cur}))
 }
 complete -o default -F __complete_rcd rcd
+
+if ! [ -e ~/.config/repos.yml ] ; then
+    printf "\033[33m"
+    echo "repos_completion.bash : WARNING: No '~/.config/repos.yml' file found." >&2
+    echo "Consider doing " >&2
+    echo "    'repos -generate-config > ~/.config/repos.yml'" >&2
+    echo "from a directory that CONTAINS git repos" >&2
+    printf "\033[0m"
+fi
