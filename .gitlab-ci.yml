@@ -4,6 +4,7 @@ stages:
   - build
 
 before_script:
+  - apt-get update --yes
   - apt-get install --yes python3
 
 build:
