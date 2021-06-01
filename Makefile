@@ -50,12 +50,14 @@ $(ssm_auto_sourced_file): Makefile
 
 ssm:$(ssm_package).ssm
 
-$(ssm_package).ssm:
+$(ssm_package):
 	$(call make_echo_generate_file)
 	$(at) make PREFIX=$(PWD)/$(ssm_package) install
 	$(at) make $(ssm_package)/.ssm.d/control.json
 	$(at) make $(ssm_auto_sourced_file)
-	$(at) tar -cvf $@ $(ssm_package)
+$(ssm_package).ssm: $(ssm_package)
+	$(call make_echo_color_bold,green,Building ssm package $@)
+	$(at) tar -cf $@ $(ssm_package)
 
 install:$(TRG)
 	$(INSTALL) -D repos $(DESTDIR)$(PREFIX)/bin/repos
