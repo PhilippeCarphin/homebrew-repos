@@ -39,6 +39,22 @@ install: $(TRG)
 	$(INSTALL) -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/repos_completion.fish
 	$(INSTALL) -D --mode 644 completions/repos_completion.zsh  $(DESTDIR)$(PREFIX)/etc/repos_completion.zsh
 
+.PHONY: localinstall
+localinstall:
+	$(call make_echo_generate_file)
+	$(at) make --no-print-directory PREFIX=$(PWD)/localinstall install
+	$(call make_echo_color_bold,magenta,Repo installed to $(PWD)/localinstall for trial use)
+	$(call make_echo_color_bold,magenta,$@: Extra instructions to use local install)
+	$(call make_echo_color_bold,yellow,Add the following to your PATH environment variable)
+	$(at) printf "\n\t$(PWD)/localinstall/bin\n\n"
+	$(call make_echo_color_bold,yellow,Add BASH startup file)
+	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.bash\n\n"
+#	$(call make_echo_color_bold,yellow,Add this FISH startup file)
+#	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.fish\n\n"
+#	$(call make_echo_color_bold,yellow,Add this to your ZSH startup file)
+#	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.zsh\n\n"
+
+
 # NOTE:I don't use variables with 'rm -rf' in makefiles
 clean:
 	rm -f *.ssm
