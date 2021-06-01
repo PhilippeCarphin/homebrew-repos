@@ -12,9 +12,9 @@ build:
   script:
     - export PATH=$HOME/.local/bin:$PATH
     - go version
+    - make
     - make PREFIX=$PWD/install install
     - make ssm
-    - ls
     - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=linux    GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
