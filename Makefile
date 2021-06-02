@@ -31,7 +31,7 @@ test:$(TRG)
 	$(at) ./repos
 
 install: $(TRG)
-	$(call make_echo_color_bold,cyan,Installing project)
+	$(call make_echo_color_bold,cyan,Installing project to $(DESTDIR)$(PREFIX))
 	$(INSTALL) -D repos $(DESTDIR)$(PREFIX)/bin/repos
 	$(INSTALL) -D man/man1/repos.man $(DESTDIR)$(PREFIX)/share/man/man1/repos.1
 	$(INSTALL) -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
@@ -49,11 +49,10 @@ localinstall:
 	$(at) printf "\n\t$(PWD)/localinstall/bin\n\n"
 	$(call make_echo_color_bold,yellow,Add BASH startup file)
 	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.bash\n\n"
-#	$(call make_echo_color_bold,yellow,Add this FISH startup file)
-#	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.fish\n\n"
-#	$(call make_echo_color_bold,yellow,Add this to your ZSH startup file)
-#	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.zsh\n\n"
-
+	$(call make_echo_color_bold,yellow,Add this FISH startup file)
+	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.fish\n\n"
+	$(call make_echo_color_bold,yellow,Add this to your ZSH startup file)
+	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.zsh\n\n"
 
 # NOTE:I don't use variables with 'rm -rf' in makefiles
 clean:
@@ -81,7 +80,16 @@ debclean:
 # - $(ssm_package) is the directory
 # - $(ssm_package).ssm is the tar archive
 #
+.PHONY: $(ssm_package).ssm
 ssm:$(ssm_package).ssm
+$(ssm_package).ssm:
+	$(call make_echo_color_bold,green,Building ssm package $@)
+	$(at) make --no-print-directory PREFIX=$(PWD)/$(ssm_package) install
+	$(at) make --no-print-directory $(ssm_package)/.ssm.d/control.json
+	$(at) make --no-print-directory $(ssm_auto_sourced_file)
+	$(call make_echo_color_bold,blue,Creating archiving $(ssm_package) to $@)
+	$(at) tar -cf $@ $(ssm_package)
+	$(call make_echo_color_bold,magenta,ssm package $@ successfully built)
 $(ssm_package)/.ssm.d/control.json: scripts/make_ssm_control_file.py Makefile
 	$(call make_echo_generate_file)
 	$(at) mkdir -p $(shell dirname $@)
@@ -90,12 +98,3 @@ $(ssm_auto_sourced_file): Makefile
 	$(call make_echo_generate_file)
 	$(at) mkdir -p $(shell dirname $@)
 	$(at) ln -s ../repos_completion.bash $@
-$(ssm_package):
-	$(call make_echo_generate_file)
-	$(at) make --no-print-directory PREFIX=$(PWD)/$(ssm_package) install
-	$(at) make --no-print-directory $(ssm_package)/.ssm.d/control.json
-	$(at) make --no-print-directory $(ssm_auto_sourced_file)
-$(ssm_package).ssm: $(ssm_package)
-	$(call make_echo_color_bold,green,Building ssm package $@)
-	$(at) tar -cf $@ $(ssm_package)
-
