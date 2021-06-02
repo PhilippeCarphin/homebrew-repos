@@ -23,6 +23,19 @@ class Repos < Formula
     # system "cmake", "-S", ".", "-B", "build", *std_cmake_args
   end
 
+  def caveats
+    s = <<~EOS
+      Please source one of
+
+        #{HOMEBREW_PREFIX}/share/completions/repos_completion.bash
+        #{HOMEBREW_PREFIX}/share/completions/repos_completion.fish
+        #{HOMEBREW_PREFIX}/share/completions/repos_completion.zsh
+
+      in your ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish.
+    EOS
+    s
+  end
+
   test do
     # `test do` will create, run in and delete a temporary directory.
     #
