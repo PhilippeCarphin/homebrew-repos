@@ -48,9 +48,9 @@ localinstall:
 	$(call make_echo_color_bold,magenta,$@: Extra instructions to use local install)
 	$(call make_echo_color_bold,yellow,Add the following to your PATH environment variable)
 	$(at) printf "\n\t$(PWD)/localinstall/bin\n\n"
-	$(call make_echo_color_bold,yellow,Add BASH startup file)
+	$(call make_echo_color_bold,yellow,Add this to your BASH startup file)
 	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.bash\n\n"
-	$(call make_echo_color_bold,yellow,Add this FISH startup file)
+	$(call make_echo_color_bold,yellow,Add this to your FISH startup file)
 	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.fish\n\n"
 	$(call make_echo_color_bold,yellow,Add this to your ZSH startup file)
 	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.zsh\n\n"
