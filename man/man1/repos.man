@@ -1,25 +1,86 @@
 .TH "Repos" "1" 
 .SH "NAME"
 .PP
-The name of the command or function, followed by a one-line description of what it does.
+repos is a command line tool keep track of local git repos.
 .SH "SYNOPSIS"
 .PP
 In the case of a command, you get a formal description of how to run it and what command line options it takes.
+
+.RS
+.nf
+\fCrepos [-no-fetch] [-j NJOBS]
+\fP
+.fi
+.RE
+
+.PP
+Outpus a report with info for git repos listed in \fC$HOME/.config/repos.yml\fP.
+
+.RS
+.nf
+\fCrcd NAME
+\fP
+.fi
+.RE
+
+.PP
+\fCcd\fP to the path of a repo by giving its name with autocompletion of repo names.
+
 .SH "DESCRIPTION"
 .PP
 A textual description of the functioning of the command or function.
-.SH "EXAMPLES"
+Without any arguments, the \fCrepos\fP looks in \fC$HOME/.config/repos.yml\fP.
+
 .PP
-Some examples of common usage.
-.SH "SEE ALSO"
+The \fC$HOME/.config/repos.yml\fP file should look like
+
+.RS
+.nf
+\fCrepos:
+  a-repo:
+    path: "/path/to/a-repo"
+  b-repo:
+    path: "/path/to/b-repo"
+\fP
+.fi
+.RE
+
+
+.SH "OPTIONS"
+.SS "\fC\-generate\-config\fP"
 .PP
-A list of related commands or functions.
+Looks in \fC$PWD\fP for git repositories and outputs the content of a \fCrepos.yml\fP
+file \fCSTDOUT\fP.
+
+.SS "\fC\-no\-fetch\fP"
+.PP
+Skips the fetching step.
+
+.SS "\fC\-j NJOBS\fP"
+.PP
+Use up to \fCNJOBS\fP concurrent processes to assess the status of the git
+repositories.
+
+.SS "\fC\-recent\fP"
+.PP
+Run \fCgit recent\fP in all repositories.  Showing commits made \fBtoday\fP and
+\fByesterday\fP.  This is very useful if you work on many repos and want to get a
+condensed report of recent activity.
+
+.SS "\fC\-days\fP"
+.PP
+Only useful with the \fC\-recent\fP flag.  Go more than one day before yesterday in
+the commit history.
+
 .SH "BUGS"
 .PP
-List known bugs.
+The accompanying script \fIrepos_completion.bash\fP defines autocomplete and the
+\fCrcd\fP that takes a repo name.  It uses the \fCrepos\fP executable.  If there is no
+\fC$HOME/.config/repos.yml\fP, the \fCrcd\fP shell function will not work.
+
 .SH "AUTHOR"
 .PP
-Specify your contact information.
+Philippe Carphin
 .SH "COPYRIGHT"
 .PP
-Specify your copyright information.
+Philippe Carphin

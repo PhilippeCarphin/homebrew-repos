@@ -1,17 +1,69 @@
 #+TITLE: Repos
 * NAME
-The name of the command or function, followed by a one-line description of what it does.
+repos is a command line tool keep track of local git repos.
 * SYNOPSIS
 In the case of a command, you get a formal description of how to run it and what command line options it takes.
+
+#+begin_src shell
+repos [-no-fetch] [-j NJOBS]
+#+end_src
+
+Outpus a report with info for git repos listed in ~$HOME/.config/repos.yml~.
+
+#+begin_src shell
+rcd NAME
+#+end_src
+
+~cd~ to the path of a repo by giving its name with autocompletion of repo names.
+
 * DESCRIPTION
 A textual description of the functioning of the command or function.
-* EXAMPLES
-Some examples of common usage.
-* SEE ALSO
-A list of related commands or functions.
+Without any arguments, the ~repos~ looks in ~$HOME/.config/repos.yml~.
+
+The ~$HOME/.config/repos.yml~ file should look like
+
+#+begin_src yaml
+repos:
+  a-repo:
+    path: "/path/to/a-repo"
+  b-repo:
+    path: "/path/to/b-repo"
+#+end_src
+
+
+* OPTIONS
+
+** ~-generate-config~
+
+Looks in ~$PWD~ for git repositories and outputs the content of a ~repos.yml~
+file ~STDOUT~.
+
+** ~-no-fetch~
+
+Skips the fetching step.
+
+** ~-j NJOBS~
+
+Use up to ~NJOBS~ concurrent processes to assess the status of the git
+repositories.
+
+** ~-recent~
+
+Run ~git recent~ in all repositories.  Showing commits made *today* and
+*yesterday*.  This is very useful if you work on many repos and want to get a
+condensed report of recent activity.
+
+** ~-days~
+
+Only useful with the ~-recent~ flag.  Go more than one day before yesterday in
+the commit history.
+
 * BUGS
-List known bugs.
+The accompanying script =repos_completion.bash= defines autocomplete and the
+~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
+~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
+
 * AUTHOR
-Specify your contact information.
+Philippe Carphin
 * COPYRIGHT
-Specify your copyright information.
+Philippe Carphin
