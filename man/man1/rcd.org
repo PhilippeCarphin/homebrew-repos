@@ -1,0 +1,28 @@
+#+TITLE: rcd
+
+* NAME
+
+rcd is a shell function that changes directory to the path of the named repo
+from ~$HOME/.config/repos.yml~.
+
+* SYNOPSIS
+
+#+begin_src shell
+rcd REPO
+#+end_src
+
+Change to the path associated to ~REPO~ in ~$HOME/.config/repos.yml~.  This
+function has autocompletion.
+
+See ~man (1) repos~ for more information about the ~repos~ command and the
+~repos.yml~ configuration file.
+
+* BUGS
+The accompanying script =repos_completion.bash= defines autocomplete and the
+~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
+~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
+
+* AUTHOR
+Philippe Carphin
+* COPYRIGHT
+Philippe Carphin
