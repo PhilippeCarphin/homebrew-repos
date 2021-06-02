@@ -3,18 +3,18 @@
 .PP
 repos is a command line tool keep track of local git repos.
 .SH "SYNOPSIS"
-.PP
-In the case of a command, you get a formal description of how to run it and what command line options it takes.
-
 .RS
 .nf
 \fCrepos [-no-fetch] [-j NJOBS]
+repos -generate-config >> ~/.config/repos.yml
+repos -get-dir REPO
 \fP
 .fi
 .RE
 
 .PP
-Outpus a report with info for git repos listed in \fC$HOME/.config/repos.yml\fP.
+Without arguments report with info for git repos listed in \fC$HOME/.config/repos.yml\fP.
+See section CONFIGURATION for details on this \fCrepos.yml\fP file.
 
 .RS
 .nf
@@ -26,11 +26,27 @@ Outpus a report with info for git repos listed in \fC$HOME/.config/repos.yml\fP.
 .PP
 \fCcd\fP to the path of a repo by giving its name with autocompletion of repo names.
 
+.PP
+See OPTIONS section for more options for \fCrepos\fP.
+
 .SH "DESCRIPTION"
 .PP
-A textual description of the functioning of the command or function.
-Without any arguments, the \fCrepos\fP looks in \fC$HOME/.config/repos.yml\fP.
+Without any arguments, the \fCrepos\fP looks in \fC$HOME/.config/repos.yml\fP and prints
+a report of on various information about the git repo:
+.IP \(em 4
+Remote state: up-to-date, behind, ahead, diverged (relative to the currently
+checked out branch in the repo).
+.IP \(em 4
+Status: Presence of staged or unstaged chages, presence of untracked files.
+.IP \(em 4
+Time since last commit: The time in hours since the last commit was made on
+the currently checked out branch.  This number does not indicate anything in and
+of itself.
 
+.PP
+See section OPTIONS for more available options for \fCrepos\fP.
+
+.SH "CONFIGURATION"
 .PP
 The \fC$HOME/.config/repos.yml\fP file should look like
 
@@ -45,6 +61,25 @@ The \fC$HOME/.config/repos.yml\fP file should look like
 .fi
 .RE
 
+.PP
+If the \fC\-generate\-config\fP is passed, instead of printing the report, \fCrepos\fP
+will look for git repositories in \fC$PWD\fP and print on STDOUT the contents of the
+corresponding \fC$HOME/.config/repos.yml\fP file.
+
+.RS
+.nf
+\fCcd ${somewhere}
+repos -generate-config > ~/.config/repos.yml
+cd ${somewhere_else}
+repos -generate-config >> ~/.config/repos.yml
+\fP
+.fi
+.RE
+
+.PP
+The config file is meant to prioritize ease of editing by humans.  Rather than
+managing the config file fully automatically, we give the human pieces that they
+can use to manage their config file.
 
 .SH "OPTIONS"
 .SS "\fC\-generate\-config\fP"

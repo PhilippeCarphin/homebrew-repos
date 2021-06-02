@@ -19,6 +19,7 @@ class Repos < Formula
     bin.install "repos" => "repos"
     bin.install "scripts/git-recent" => "git-recent"
     man1.install "man/man1/repos.man" => "repos.1"
+    man1.install "man/man1/rcd.man" => "rcd.1"
     share.install "completions" => "completions"
     # system "cmake", "-S", ".", "-B", "build", *std_cmake_args
   end

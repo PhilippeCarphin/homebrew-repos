@@ -2,13 +2,15 @@
 * NAME
 repos is a command line tool keep track of local git repos.
 * SYNOPSIS
-In the case of a command, you get a formal description of how to run it and what command line options it takes.
 
 #+begin_src shell
 repos [-no-fetch] [-j NJOBS]
+repos -generate-config >> ~/.config/repos.yml
+repos -get-dir REPO
 #+end_src
 
-Outpus a report with info for git repos listed in ~$HOME/.config/repos.yml~.
+Without arguments report with info for git repos listed in ~$HOME/.config/repos.yml~.
+See section CONFIGURATION for details on this ~repos.yml~ file.
 
 #+begin_src shell
 rcd NAME
@@ -16,9 +18,21 @@ rcd NAME
 
 ~cd~ to the path of a repo by giving its name with autocompletion of repo names.
 
+See OPTIONS section for more options for ~repos~.
+
 * DESCRIPTION
-A textual description of the functioning of the command or function.
-Without any arguments, the ~repos~ looks in ~$HOME/.config/repos.yml~.
+Without any arguments, the ~repos~ looks in ~$HOME/.config/repos.yml~ and prints
+a report of on various information about the git repo:
+- Remote state: up-to-date, behind, ahead, diverged (relative to the currently
+  checked out branch in the repo).
+- Status: Presence of staged or unstaged chages, presence of untracked files.
+- Time since last commit: The time in hours since the last commit was made on
+  the currently checked out branch.  This number does not indicate anything in and
+  of itself.
+  
+See section OPTIONS for more available options for ~repos~.
+
+* CONFIGURATION
 
 The ~$HOME/.config/repos.yml~ file should look like
 
@@ -30,6 +44,20 @@ repos:
     path: "/path/to/b-repo"
 #+end_src
 
+If the ~-generate-config~ is passed, instead of printing the report, ~repos~
+will look for git repositories in ~$PWD~ and print on STDOUT the contents of the
+corresponding ~$HOME/.config/repos.yml~ file.
+
+#+begin_src yaml
+cd ${somewhere}
+repos -generate-config > ~/.config/repos.yml
+cd ${somewhere_else}
+repos -generate-config >> ~/.config/repos.yml
+#+end_src
+
+The config file is meant to prioritize ease of editing by humans.  Rather than
+managing the config file fully automatically, we give the human pieces that they
+can use to manage their config file.
 
 * OPTIONS
 
