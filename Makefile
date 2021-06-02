@@ -37,7 +37,7 @@ install: $(TRG)
 	$(INSTALL) -D man/man1/rcd.man $(DESTDIR)$(PREFIX)/share/man/man1/rcd.1
 	$(INSTALL) -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
 	$(INSTALL) -D --mode 644 completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/repos_completion.bash
-	$(INSTALL) -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/repos_completion.fish
+	$(INSTALL) -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/share/fish/vendor_completions.d/repos_completion.fish
 	$(INSTALL) -D --mode 644 completions/repos_completion.zsh  $(DESTDIR)$(PREFIX)/etc/repos_completion.zsh
 
 .PHONY: localinstall
@@ -50,8 +50,8 @@ localinstall:
 	$(at) printf "\n\t$(PWD)/localinstall/bin\n\n"
 	$(call make_echo_color_bold,yellow,Add this to your BASH startup file)
 	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.bash\n\n"
-	$(call make_echo_color_bold,yellow,Add this to your FISH startup file)
-	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.fish\n\n"
+	$(call make_echo_color_bold,yellow,Add this to your FISH startup file if autocomplete is not automatically loaded)
+	$(at) printf "\n\t$(PWD)/localinstall/share/fish/vendor_completions.d/repos_completion.fish\n\n"
 	$(call make_echo_color_bold,yellow,Add this to your ZSH startup file)
 	$(at) printf "\n\t$(PWD)/localinstall/etc/repos_completion.zsh\n\n"
 

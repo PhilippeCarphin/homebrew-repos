@@ -21,6 +21,7 @@ class Repos < Formula
     man1.install "man/man1/repos.man" => "repos.1"
     man1.install "man/man1/rcd.man" => "rcd.1"
     share.install "completions" => "completions"
+    share.install "completions/repos_completion.fish" => "fish/vendor_completions.d"
     # system "cmake", "-S", ".", "-B", "build", *std_cmake_args
   end
 
