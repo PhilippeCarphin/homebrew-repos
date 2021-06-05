@@ -39,7 +39,13 @@ home_dirs = [
     "fs3/Cellar/Repositories",
     "workspace",
 
-    "Projects"
+    "Projects",
+    "code"
+    "projects",
+    "git",
+    "GIT",
+    "WORKSPACE",
+    "work",
 ]
 repos = []
 for d in home_dirs:
