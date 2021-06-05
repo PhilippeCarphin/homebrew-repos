@@ -38,6 +38,7 @@ home_dirs = [
     "fs2/Cellar/Repositories",
     "fs3/Cellar/Repositories",
     "workspace",
+    "Documents/GitHub",
 
     "Projects",
     "code"
