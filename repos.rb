@@ -16,7 +16,7 @@ class Repos < Formula
     # Remove unrecognized options if warned by configure
     # https://rubydoc.brew.sh/Formula.html#std_configure_args-instance_method
     system "make", "repos"
-    bin.install "src/repos" => "repos"
+    bin.install "repos" => "repos"
     bin.install "scripts/git-recent" => "git-recent"
     man1.install "share/man/man1/repos.1" => "repos.1"
     man1.install "share/man/man1/rcd.1" => "rcd.1"
