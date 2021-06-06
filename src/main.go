@@ -354,7 +354,7 @@ func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
 			return newShellInDir(ri.Config.Path)
 		}
 	}
-	return 1, fmt.Errorf("could not find repo '%s' in ~/.repos.yml", repoName)
+	return 1, fmt.Errorf("could not find repo '%s' in ~/.config/repos.yml", repoName)
 }
 func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) error {
 
