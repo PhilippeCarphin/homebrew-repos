@@ -39,8 +39,8 @@ install: $(TRG) man
 	$(INSTALL) -D share/man/man1/rcd.1 $(DESTDIR)$(PREFIX)/share/man/man1/rcd.1
 	$(INSTALL) -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
 	$(INSTALL) -D scripts/repo_finder.py $(DESTDIR)$(PREFIX)/bin/repo-finder
-	$(INSTALL) -D --mode 644 completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/repos_completion.bash
-	$(INSTALL) -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/repos_completion.fish
+	$(INSTALL) -D --mode 644 completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/bash_completion.d/repos_completion.bash
+	$(INSTALL) -D --mode 644 completions/repos_completion.fish $(DESTDIR)$(PREFIX)/etc/fish/vendor_completions.d/repos_completion.fish
 	$(INSTALL) -D --mode 644 completions/repos_completion.zsh  $(DESTDIR)$(PREFIX)/etc/repos_completion.zsh
 	@printf "\033[1;35mRepo installed to $(PWD)/localinstall for trial use\n"
 	@printf "\033[1;35m$@: Extra instructions to use local install\033[0m\n"
