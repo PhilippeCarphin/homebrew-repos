@@ -15,11 +15,11 @@ class Repos < Formula
     # ENV.deparallelize  # if your formula fails when building in parallel
     # Remove unrecognized options if warned by configure
     # https://rubydoc.brew.sh/Formula.html#std_configure_args-instance_method
-    system "make"
-    bin.install "repos" => "repos"
+    system "make", "repos"
+    bin.install "src/repos" => "repos"
     bin.install "scripts/git-recent" => "git-recent"
-    man1.install "man/man1/repos.man" => "repos.1"
-    man1.install "man/man1/rcd.man" => "rcd.1"
+    man1.install "share/man/man1/repos.1" => "repos.1"
+    man1.install "share/man/man1/rcd.1" => "rcd.1"
     share.install "completions" => "completions"
     # system "cmake", "-S", ".", "-B", "build", *std_cmake_args
   end
