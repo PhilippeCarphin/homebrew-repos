@@ -1,0 +1,121 @@
+.TH "Repos" "1" 
+.SH "NAME"
+.PP
+repos is a command line tool keep track of local git repos.
+.SH "SYNOPSIS"
+.RS
+.nf
+\fCrepos [-no-fetch] [-j NJOBS]
+repos -generate-config >> ~/.config/repos.yml
+repos -get-dir REPO
+\fP
+.fi
+.RE
+
+.PP
+Without arguments report with info for git repos listed in \fC$HOME/.config/repos.yml\fP.
+See section CONFIGURATION for details on this \fCrepos.yml\fP file.
+
+.RS
+.nf
+\fCrcd NAME
+\fP
+.fi
+.RE
+
+.PP
+\fCcd\fP to the path of a repo by giving its name with autocompletion of repo names.
+
+.PP
+See OPTIONS section for more options for \fCrepos\fP.
+
+.SH "DESCRIPTION"
+.PP
+Without any arguments, the \fCrepos\fP looks in \fC$HOME/.config/repos.yml\fP and prints
+a report of on various information about the git repo:
+.IP \(em 4
+Remote state: up-to-date, behind, ahead, diverged (relative to the currently
+checked out branch in the repo).
+.IP \(em 4
+Status: Presence of staged or unstaged chages, presence of untracked files.
+.IP \(em 4
+Time since last commit: The time in hours since the last commit was made on
+the currently checked out branch.  This number does not indicate anything in and
+of itself.
+
+.PP
+See section OPTIONS for more available options for \fCrepos\fP.
+
+.SH "CONFIGURATION"
+.PP
+The \fC$HOME/.config/repos.yml\fP file should look like
+
+.RS
+.nf
+\fCrepos:
+  a-repo:
+    path: "/path/to/a-repo"
+  b-repo:
+    path: "/path/to/b-repo"
+\fP
+.fi
+.RE
+
+.PP
+If the \fC\-generate\-config\fP is passed, instead of printing the report, \fCrepos\fP
+will look for git repositories in \fC$PWD\fP and print on STDOUT the contents of the
+corresponding \fC$HOME/.config/repos.yml\fP file.
+
+.RS
+.nf
+\fCcd ${somewhere}
+repos -generate-config > ~/.config/repos.yml
+cd ${somewhere_else}
+repos -generate-config >> ~/.config/repos.yml
+\fP
+.fi
+.RE
+
+.PP
+The config file is meant to prioritize ease of editing by humans.  Rather than
+managing the config file fully automatically, we give the human pieces that they
+can use to manage their config file.
+
+.SH "OPTIONS"
+.SS "\fC\-generate\-config\fP"
+.PP
+Looks in \fC$PWD\fP for git repositories and outputs the content of a \fCrepos.yml\fP
+file \fCSTDOUT\fP.
+
+.SS "\fC\-no\-fetch\fP"
+.PP
+Skips the fetching step.
+
+.SS "\fC\-j NJOBS\fP"
+.PP
+Use up to \fCNJOBS\fP concurrent processes to assess the status of the git
+repositories.
+
+.SS "\fC\-recent\fP"
+.PP
+Run \fCgit recent\fP in all repositories.  Showing commits made \fBtoday\fP and
+\fByesterday\fP.  This is very useful if you work on many repos and want to get a
+condensed report of recent activity.
+
+.SS "\fC\-days\fP"
+.PP
+Only useful with the \fC\-recent\fP flag.  Go more than one day before yesterday in
+the commit history.
+
+.SH "BUGS"
+.PP
+The accompanying script \fIrepos_completion.bash\fP defines autocomplete and the
+\fCrcd\fP that takes a repo name.  It uses the \fCrepos\fP executable.  If there is no
+\fC$HOME/.config/repos.yml\fP, the \fCrcd\fP shell function will not work.
+
+.SH "AUTHOR"
+.PP
+Philippe Carphin
+.SH "COPYRIGHT"
+.PP
+Philippe Carphin
