@@ -56,12 +56,15 @@ install: $(TRG) man
 
 # NOTE:I don't use variables with 'rm -rf' in makefiles
 clean:
-	rm -f share/man/man1/*.1
 	rm -f *.ssm
 	rm -f $(TRG)
 	rm -rf repos_*_all
 	rm -rf repos.ssmd
 
+# I leave it separate because I decided to package the generated files with the
+# repos since not everybody has emacs or pandoc setup.
+cleanman:
+	rm -f share/man/man1/*.1
 # Debian package
 #
 deb:../repos-$(version).tar.gz
