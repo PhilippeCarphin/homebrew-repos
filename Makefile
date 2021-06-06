@@ -1,6 +1,6 @@
-include colors.mk
+include util/colors.mk
 
-PREFIX ?= /usr
+PREFIX ?= $(PWD)/localinstall
 TRG=repos
 
 version = 0.1.0
@@ -22,10 +22,9 @@ all:$(TRG)
 #
 # Regular targets
 #
-$(TRG):main.go
+$(TRG):src/main.go
 	$(call make_echo_generate_file)
-	$(at) go build
-
+	$(at) cd src && go build -o $(PWD)/$@
 test:$(TRG)
 	$(call make_echo_run_test,"Running $<")
 	$(at) ./repos
