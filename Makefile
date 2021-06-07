@@ -24,8 +24,11 @@ $(TRG):src/main.go
 test:$(TRG)
 	$(call make_echo_run_test,"Running $<")
 	$(at) ./$(TRG)
-
-man: share/man/man1/repos.1 share/man/man1/rcd.1
+man_1_src = $(wildcard share/man/man1/*.org)
+man_1 = $(man_1_src:.org=.1)
+man: $(man_1)
+	@echo "man_1_src = $(man_1_src)"
+	@echo "man_1 = $(man_1)"
 
 %.man:%.org
 	emacs --batch -l ox-man $< -f org-man-export-to-man
@@ -35,8 +38,10 @@ man: share/man/man1/repos.1 share/man/man1/rcd.1
 install: $(TRG) man
 	$(call make_echo_color_bold,cyan,Installing project to $(DESTDIR)$(PREFIX))
 	$(INSTALL) -D repos $(DESTDIR)$(PREFIX)/bin/repos
-	$(INSTALL) -D share/man/man1/repos.1 $(DESTDIR)$(PREFIX)/share/man/man1/repos.1
-	$(INSTALL) -D share/man/man1/rcd.1 $(DESTDIR)$(PREFIX)/share/man/man1/rcd.1
+	@for f in $(man_1) ; do \
+		echo $(INSTALL) -D $$f $(DESTDIR)$(PREFIX)/$$f ;\
+		$(INSTALL) -D $$f $(DESTDIR)$(PREFIX)/$$f ;\
+	done
 	$(INSTALL) -D scripts/git-recent $(DESTDIR)$(PREFIX)/bin/git-recent
 	$(INSTALL) -D scripts/repo_finder.py $(DESTDIR)$(PREFIX)/bin/repo-finder
 	$(INSTALL) -D --mode 644 completions/repos_completion.bash $(DESTDIR)$(PREFIX)/etc/bash_completion.d/repos_completion.bash
