@@ -22,7 +22,11 @@ The accompanying script =repos_completion.bash= defines autocomplete and the
 ~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
 ~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
 
+* SEE ALSO
+repos, repo-finder, git-recent
 * AUTHOR
 Philippe Carphin
+
+
 * COPYRIGHT
 Philippe Carphin
