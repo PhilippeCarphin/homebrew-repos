@@ -17,6 +17,9 @@ include(CTest)
 add_custom_target(check COMMAND CTEST_OUTPUT_ON_FAILURE=true ${CMAKE_CTEST_COMMAND})
 install(PROGRAMS scripts/git-recent DESTINATION bin)
 install(PROGRAMS scripts/repo_finder.py DESTINATION bin RENAME repo-finder)
+if(SSM_PACKAGE_NAME)
+    install(FILES completions/repos_completion.bash DESTINATION etc/profile.d/ RENAME ${SSM_PACKAGE_NAME}.sh)
+endif()
 
 set(repos_exec ${CMAKE_BINARY_DIR}/repos)
 add_custom_command(
