@@ -59,6 +59,8 @@ The config file is meant to prioritize ease of editing by humans.  Rather than
 managing the config file fully automatically, we give the human pieces that they
 can use to manage their config file.
 
+
+
 * OPTIONS
 
 ** ~-generate-config~
@@ -91,7 +93,7 @@ The accompanying script =repos_completion.bash= defines autocomplete and the
 ~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
 ~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
 
+* SEE ALSO 
+rcd, repo-finder
 * AUTHOR
-Philippe Carphin
-* COPYRIGHT
 Philippe Carphin

@@ -1,0 +1,34 @@
+#+TITLE: rcd
+
+* NAME
+
+~git-recent~ is a tool to show recent git commits in a repo.
+
+* SYNOPSIS
+
+#+begin_src shell
+git-recent [-d DAYS]
+#+end_src
+
+Change to the path associated to ~REPO~ in ~$HOME/.config/repos.yml~.  This
+function has autocompletion.
+
+See ~man (1) repos~ for more information about the ~repos~ command and the
+~repos.yml~ configuration file.
+
+* OPTIONS
+
+** ~-d DAYS~
+
+Go back ~DAYS~ days before yesterday when searching for recent commits.
+
+
+* SEE ALSO
+repos, repo-finder, rcd
+
+* AUTHOR
+Philippe Carphin
+
+
+* COPYRIGHT
+Philippe Carphin

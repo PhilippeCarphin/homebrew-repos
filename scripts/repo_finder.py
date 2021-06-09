@@ -34,6 +34,8 @@ home_dirs = [
     "go/src/gitlab.com/philippecarphin",
     "go/src/github.com/philippecarphin",
     "go/src/gitlab.science.gc.ca",
+    "repos",
+    "Repos",
     "fs2/Cellar/Repositories",
     "Repositories",
     "workspace",
