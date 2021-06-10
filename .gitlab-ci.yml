@@ -12,9 +12,9 @@ build:
   script:
     - export PATH=$HOME/.local/bin:$PATH
     - go version
-    - make
-    - make PREFIX=$PWD/install install
-    - make ssm
+    - mkdir build
+    - cd build
+    - cmake .. -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install
     - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
     - export GOOS=linux    GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
@@ -26,4 +26,3 @@ build:
   artifacts:
     paths:
       - install
-      - repos_0.1.0_all.ssm
