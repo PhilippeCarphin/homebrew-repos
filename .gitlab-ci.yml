@@ -5,7 +5,7 @@ stages:
 
 before_script:
   - apt-get update --yes
-  - apt-get install --yes python3
+  - apt-get install --yes python3 cmake pandoc
 
 build:
   stage: build
