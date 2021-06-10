@@ -15,14 +15,12 @@ build:
     - mkdir build
     - cd build
     - cmake .. -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install
-    - export GOOS=darwin   GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
-    - export GOOS=darwin   GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
-    - export GOOS=linux    GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
-    - export GOOS=linux    GOARCH=arm64 ; go build -o repos-${GOOS}-${GOARCH}
-    - export GOOS=windows  GOARCH=amd64 ; go build -o repos-${GOOS}-${GOARCH}
-    - cp repos-darwin* install/bin/
-    - cp repos-linux* install/bin/
-    - cp repos-windows* install/bin/
+    - cd ../src
+    - export GOOS=darwin   GOARCH=amd64 ; go build -o ${CI_PROJECT_DIR}/install/repos-${GOOS}-${GOARCH}
+    - export GOOS=darwin   GOARCH=arm64 ; go build -o ${CI_PROJECT_DIR}/install/repos-${GOOS}-${GOARCH}
+    - export GOOS=linux    GOARCH=amd64 ; go build -o ${CI_PROJECT_DIR}/install/repos-${GOOS}-${GOARCH}
+    - export GOOS=linux    GOARCH=arm64 ; go build -o ${CI_PROJECT_DIR}/install/repos-${GOOS}-${GOARCH}
+    - export GOOS=windows  GOARCH=amd64 ; go build -o ${CI_PROJECT_DIR}/install/repos-${GOOS}-${GOARCH}
   artifacts:
     paths:
       - install
