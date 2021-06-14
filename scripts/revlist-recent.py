@@ -10,11 +10,19 @@ class Repo:
     def test(self):
         return list(get_recent_commits(self.repo_dir, "test-branch", 8))
 
-
-
 def get_recent_commits(repo_dir, branch, days):
-    """ Create a list of commits made on a branch between now and a number of
+    """ Yield recent commits reacheable from a certain branch made up to 'days'
     days in the past.
+
+    YIELDS: Dictionnaries of the form
+
+        {
+            'commit': <HASH>,
+            'date': <DATETIME OBJECT>,
+            'message': <MESSAGE>
+        }
+
+    use commit_list = list(gen_recent_commits(...)) to get a printable list.
 
     Implementation details:
 
