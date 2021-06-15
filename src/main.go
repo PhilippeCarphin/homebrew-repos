@@ -170,7 +170,7 @@ func dumpDatabase(filename string, database []*repoInfo) {
 
 func showRecentCommits(database []*repoInfo, args args) error {
 	for _, ri := range database {
-		cmd := ri.Config.gitCommand("recent", "-d", fmt.Sprintf("%d", (args.days)))
+		cmd := ri.Config.gitCommand("recent", "--all", "-d", fmt.Sprintf("%d", (args.days)))
 		out, err := cmd.Output()
 		if err != nil {
 			fmt.Printf("Could not get recent commits for %s: %v\n", ri.Config.Path, err)
