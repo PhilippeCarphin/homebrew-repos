@@ -61,7 +61,7 @@ class Repo:
             branch_recent = list(new_get_recent_commits(self.repo_dir, b, days))
             if branch_recent:
                 print(f"\033[1;37m=========================== {b} =====================\033[0m")
-                pprint()
+                pprint(branch_recent)
 
 def new_get_recent_commits(repo_dir, branch, days):
     """ Yield recent commits reacheable from a certain branch made up to 'days'
