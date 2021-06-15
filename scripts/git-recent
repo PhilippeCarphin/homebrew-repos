@@ -58,8 +58,10 @@ class Repo:
 
     def all_recent(self, days=2):
         for b in self.branches():
-            print(f"\033[1;37m=========================== {b} =====================\033[0m")
-            pprint(list(new_get_recent_commits(self.repo_dir, b, days)))
+            branch_recent = list(new_get_recent_commits(self.repo_dir, b, days))
+            if branch_recent:
+                print(f"\033[1;37m=========================== {b} =====================\033[0m")
+                pprint()
 
 def new_get_recent_commits(repo_dir, branch, days):
     """ Yield recent commits reacheable from a certain branch made up to 'days'
