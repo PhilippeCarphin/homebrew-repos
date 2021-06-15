@@ -54,14 +54,22 @@ class Repo:
     def branches(self):
         result = subprocess.run(f"cd {self.repo_dir} && git branch | tr '*' ' '", shell=True, universal_newlines=True, check=True, stdout=subprocess.PIPE)
         for l in result.stdout.splitlines():
+            if 'HEAD' in l:
+                continue
+            if '(' in l:
+                continue
             yield l.strip()
 
     def all_recent(self, days=2):
         for b in self.branches():
             branch_recent = list(new_get_recent_commits(self.repo_dir, b, days))
             if branch_recent:
-                print(f"\033[1;37m=========================== {b} =====================\033[0m")
-                pprint(branch_recent)
+                print(f"\033[1;37mCommits made in the last {days} days on branch \033[1;35m{b}\033[1;37m\033[0m")
+                for c in sorted(branch_recent, key=lambda c: c["date"], reverse=True):
+                    print_commit(c)
+
+def print_commit(c):
+    print("\033[33m{}\033[0m {} - \033[32m{}\033[0m".format(c['hash'][:6], c['date'], c['message']))
 
 def new_get_recent_commits(repo_dir, branch, days):
     """ Yield recent commits reacheable from a certain branch made up to 'days'
