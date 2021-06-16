@@ -77,11 +77,12 @@ class Repo:
 
     def print_recent_commits(self, days=1):
         now = datetime.date.today()
+        right_now = datetime.datetime.now()
         yesterday = now - datetime.timedelta(days=1)
         before_yesterday = now - datetime.timedelta(days=1+days)
 
-        today = list(self.commits_between_dates(yesterday, now))
-        yesterday = list(self.commits_between_dates(before_yesterday, yesterday))
+        today = list(self.commits_between_dates(now, right_now))
+        yesterday = list(self.commits_between_dates(before_yesterday, now))
 
         if today or yesterday:
             print("\033[1;4;35mCommits made today on {}\033[0m".format(self.repo_dir))
@@ -104,13 +105,14 @@ class Repo:
 
     def all_recent(self, days=2):
         now = datetime.date.today()
+        right_now = datetime.datetime.now()
         yesterday = now - datetime.timedelta(days=1)
         before_yesterday = now - datetime.timedelta(days=1+days)
 
         for b in self.branches():
 
-            today_commits = list(self.commits_between_dates(yesterday, now, b))
-            yesterday_commits = list(self.commits_between_dates(before_yesterday, yesterday, b))
+            today_commits = list(self.commits_between_dates(now, right_now, b))
+            yesterday_commits = list(self.commits_between_dates(before_yesterday, now, b))
 
             if today_commits:
                 print(f"\033[1;37mCommits made today days on branch \033[1;35m{b}\033[1;37m\033[0m")
