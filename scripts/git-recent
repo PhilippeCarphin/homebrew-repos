@@ -6,23 +6,74 @@ import subprocess
 from pprint import pprint
 import argparse
 
+def main():
+    p = argparse.ArgumentParser(description="Print today and yesterday's commits for a git repo")
+    p.add_argument("--days", "-d", default=1, help="Number of days to go before yesterday")
+    p.add_argument("--all", "-a", action='store_true', help="Check recent commits for all branches")
+    args = p.parse_args()
+    repo_dir = os.getcwd()
+    repo = Repo(repo_dir)
+    if args.all:
+        repo.all_recent(days=int(args.days))
+    else:
+        repo.print_recent_commits(days=int(args.days))
+
 
 class Repo:
     def __init__(self, repo_dir):
         self.repo_dir = repo_dir
-        self.commits = list(get_commits_gen(repo_dir))
 
-    def commits_between_dates(self, begin, end):
-        for c in self.commits:
-            date = datetime.date.fromtimestamp(int(c["date"].timestamp()))
-            if begin < date and date <= end:
-                yield c
-    def organize_by_day(self):
-        """Getting today's commits and yesterday's commits in two different
-        lists is done by going over the whole list of commits twice.  If this
-        becomes a problem, I can organize the commits by day in a single pass
-        then get the commits for today and yesterday."""
-        pass
+    def branches(self):
+        result = subprocess.run(f"cd {self.repo_dir} && git branch | tr '*' ' '",
+                shell=True, universal_newlines=True, check=True, stdout=subprocess.PIPE)
+        for l in result.stdout.splitlines():
+            if 'HEAD' in l:
+                continue
+            if '(' in l:
+                continue
+            yield l.strip()
+
+    def commits_between_dates(self, begin, end, branch="HEAD"):
+        """ Yield recent commits reacheable from a certain branch made up to 'days'
+        days in the past.
+
+        YIELDS: Dictionnaries of the form
+
+            {
+                'commit': <HASH>,
+                'date': <DATETIME OBJECT>,
+                'message': <MESSAGE>
+            }
+
+        use commit_list = list(gen_recent_commits(...)) to get a printable list.
+
+        Implementation details:
+
+        We use 'git rev-list {branch} --after={date} --pretty=format:{format} where date is
+        today's date minus the prescribed number of days and {format} makes the
+        output easy to parse.
+
+        The format is "{Commit Hash} {Unix timestamp} {Commit message}"
+        """
+        cmd = 'cd {} && git rev-list {} --after="{}" --before="{}" --pretty=format:"%h %at %s"'.format(
+                self.repo_dir, branch, begin.strftime("%Y-%m-%d %H:%M"), end.strftime("%Y-%m-%d %H:%M"))
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        for l in result.stdout.splitlines():
+            if l.startswith("commit"):
+                continue
+            words = l.split()
+            yield {
+                "date": datetime.datetime.fromtimestamp(int(words[1])),
+                "hash": words[0],
+                "message": ' '.join(words[2:]),
+            }
 
     def print_recent_commits(self, days=1):
         now = datetime.date.today()
@@ -51,104 +102,30 @@ class Repo:
             for c in sorted(yesterday, key=lambda c: c["date"], reverse=True):
                 print("\033[33m{}\033[0m {} - \033[32m{}\033[0m".format(c['hash'][:6],c['date'],c['message']))
 
-    def branches(self):
-        result = subprocess.run(f"cd {self.repo_dir} && git branch | tr '*' ' '", shell=True, universal_newlines=True, check=True, stdout=subprocess.PIPE)
-        for l in result.stdout.splitlines():
-            if 'HEAD' in l:
-                continue
-            if '(' in l:
-                continue
-            yield l.strip()
-
     def all_recent(self, days=2):
+        now = datetime.date.today()
+        yesterday = now - datetime.timedelta(days=1)
+        before_yesterday = now - datetime.timedelta(days=1+days)
+
         for b in self.branches():
-            branch_recent = list(new_get_recent_commits(self.repo_dir, b, days))
-            if branch_recent:
-                print(f"\033[1;37mCommits made in the last {days} days on branch \033[1;35m{b}\033[1;37m\033[0m")
-                for c in sorted(branch_recent, key=lambda c: c["date"], reverse=True):
+
+            today_commits = list(self.commits_between_dates(yesterday, now, b))
+            yesterday_commits = list(self.commits_between_dates(before_yesterday, yesterday, b))
+
+            if today_commits:
+                print(f"\033[1;37mCommits made today days on branch \033[1;35m{b}\033[1;37m\033[0m")
+                for c in sorted(today_commits, key=lambda c: c["date"], reverse=True):
+                    print_commit(c)
+            if yesterday_commits:
+                print(f"\033[1;37mCommits made between yesterday and {days} days ago on branch \033[1;35m{b}\033[1;37m\033[0m")
+                for c in sorted(yesterday_commits, key=lambda c: c["date"], reverse=True):
                     print_commit(c)
 
 def print_commit(c):
     print("\033[33m{}\033[0m {} - \033[32m{}\033[0m".format(c['hash'][:6], c['date'], c['message']))
 
-def new_get_recent_commits(repo_dir, branch, days):
-    """ Yield recent commits reacheable from a certain branch made up to 'days'
-    days in the past.
-
-    YIELDS: Dictionnaries of the form
-
-        {
-            'commit': <HASH>,
-            'date': <DATETIME OBJECT>,
-            'message': <MESSAGE>
-        }
-
-    use commit_list = list(gen_recent_commits(...)) to get a printable list.
-
-    Implementation details:
-
-    We use 'git rev-list {branch} --after={date} --pretty=format:{format} where date is
-    today's date minus the prescribed number of days and {format} makes the
-    output easy to parse.
-
-    The format is "{Commit Hash} {Unix timestamp} {Commit message}"
-    """
-    now = datetime.date.today()
-    yesterday = now - datetime.timedelta(days=1)
-    before_yesterday = now - datetime.timedelta(days=1+days)
-
-    cmd = 'cd {} && git rev-list {} --after="{}" --pretty=format:"%h %at %s"'.format(
-            repo_dir, branch, before_yesterday.strftime("%Y-%m-%d 12:00"))
-    result = subprocess.run(
-        cmd,
-        shell=True,
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-    )
-    for l in result.stdout.splitlines():
-        if l.startswith("commit"):
-            continue
-        words = l.split()
-        yield {
-            "date": datetime.datetime.fromtimestamp(int(words[1])),
-            "hash": words[0],
-            "message": ' '.join(words[2:]),
-        }
-
-def get_commits_gen(repo_dir):
-    result = subprocess.run(
-        'cd {} && git log --date=unix --pretty=format:"%ad %H %s"'.format(repo_dir),
-        shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        check=True
-    )
-    for l in result.stdout.splitlines():
-        words = l.split()
-        yield {
-            "date": datetime.datetime.fromtimestamp(int(words[0])),
-            "hash": words[1],
-            "message": ' '.join(words[2:]),
-        }
-
-def main():
-    p = argparse.ArgumentParser(description="Print today and yesterday's commits for a git repo")
-    p.add_argument("--days", "-d", default=1, help="Number of days to go before yesterday")
-    p.add_argument("--all", "-a", action='store_true', help="Check recent commits for all branches")
-    args = p.parse_args()
-    repo_dir = os.getcwd()
-    repo = Repo(repo_dir)
-    if args.all:
-        repo.all_recent(days=int(args.days))
-    else:
-        repo.print_recent_commits(days=int(args.days))
-
 if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except subprocess.CalledProcessError as e:
-        print(e.stderr.strip())
-        sys.exit(e.returncode)
+    sys.exit(main())
 
 
 
