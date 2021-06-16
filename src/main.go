@@ -178,8 +178,6 @@ func showRecentCommits(database []*repoInfo, args args) error {
 		if len(out) > 0 {
 			fmt.Printf("\033[1;4;35mRecent commits on all branches for %s\033[0m\n", ri.Config.Path)
 			fmt.Print(string(out))
-		} else {
-			fmt.Printf("No recent commits on repo %s\n", ri.Config.Path)
 		}
 	}
 	return nil
