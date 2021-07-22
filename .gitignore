@@ -10,3 +10,4 @@ repos*_all
 *.ssmd
 localinstall
 *.1
+spkg-build
