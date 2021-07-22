@@ -39,3 +39,9 @@ install(
     DESTINATION
         share/completions/repos
 )
+install(
+    FILES
+        completions/repos_completion.bash
+    DESTINATION
+        etc/bash_completion.d
+)
