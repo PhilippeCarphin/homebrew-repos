@@ -6,9 +6,12 @@ def is_git_repo(path):
     try:
         if not os.path.isdir(path):
             return False
-        for d in os.listdir(path):
-            if d.endswith(".git"):
+        contents = os.listdir(path)
+        for d in contents:
+            if d == ".git":
                 return True
+        if 'branches' in contents and 'refs' in contents and 'objects' in contents and 'packed-refs' in contents:
+            return True
     except PermissionError:
         return False
     return False
