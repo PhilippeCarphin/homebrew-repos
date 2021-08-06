@@ -65,7 +65,7 @@ __repos_get_current_option(){
 }
 
 __suggest_repos_options(){
-	candidates=" Usage -generate-config -j -list-names -list-repos -no-fetch -path -r"
+	candidates=" Usage -generate-config -j -list-names -list-repos -no-fetch -path -r -get-dir"
 }
 
 __suggest_repos_args_for_option(){
@@ -76,7 +76,7 @@ __suggest_repos_args_for_option(){
 		-list-repos) __suggest_repos_key_list_repos_values ;;
 		-no-fetch) __suggest_repos_key_no_fetch_values ;;
 		-path) __suggest_repos_key_path_values ;;
-		-r) __suggest_repos_key_r_values ;;
+		-r|-get-dir) __suggest_repos_key_r_values ;;
 	esac
 }
 
