@@ -42,6 +42,10 @@ func getArgs() args {
 
 	var a args
 
+	flag.Usage = func(){
+		fmt.Printf("Repos is a tool for listing the states of multiple local repos.  See man repos for more information\n\nUsage:\n\n\trepos [options]\n\nOptions:\n")
+		flag.PrintDefaults()
+	}
 	a.command = flag.Arg(0)
 	flag.StringVar(&a.path, "path", "", "Specify a single repo to give info for")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.config/repos.yml file content on STDOUT.")
