@@ -111,8 +111,20 @@ __suggest_repos_key_r_values(){
 complete -o default -F __complete_repos repos
 
 function rcd(){
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] ; then
+        echo "rcd : 'repos-cd' is a shell function to cd to repos
+by their names in ~/.config/repos.yml.  This function
+has AUTOCOMPLETE based on the repos listed in ~/.config/repos.yml
+
+Usage:
+
+    rcd REPO-NAME
+
+See 'man rcd' for more information."
+        return
+    fi
     local dir=$(repos -get-dir $1)
-    echo "[33mcd $dir[0m"
+    printf "\033[33mcd $dir\033[0m\n"
     cd $dir
 }
 
