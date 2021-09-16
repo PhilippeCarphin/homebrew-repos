@@ -306,15 +306,6 @@ func (r repoConfig) getTimeSinceLastCommit() (time.Time, error) {
 	return time.Unix(timestamp, 0), nil
 }
 
-func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) error {
-
-	for _, ri := range database {
-		fmt.Fprintf(os.Stdout, "complete -f -c repos -n 'contains -- -r (commandline -opc)' -a %s -d %s\n", ri.Config.Name, ri.Config.Path)
-	}
-
-	return nil
-}
-
 func getRepoDir(database []*repoInfo, repoName string) (string, error) {
 	for _, ri := range database {
 		if ri.Config.Name == repoName {
@@ -323,105 +314,6 @@ func getRepoDir(database []*repoInfo, repoName string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no repo with name '%s' in database", repoName)
-}
-
-func main() {
-
-	args := getArgs()
-	if args.generateConfig {
-		generateConfig("")
-		return
-	}
-
-	if args.path != "" {
-		ri := repoInfo{}
-		ri.Config.Name = fmt.Sprintf("-path %s", args.path)
-		ri.Config.Path = args.path
-		var err error
-		ri.State, err = ri.Config.getState(!args.noFetch)
-		if err != nil {
-			panic(err)
-		}
-		printRepoInfo(&ri)
-		return
-	}
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
-
-	var databaseFile string
-	if args.configFile != "" {
-		databaseFile = args.configFile
-	} else {
-		databaseFile = filepath.Join(home, ".config", "repos.yml")
-	}
-
-	database, err := readDatabase(databaseFile)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	if args.recent {
-		showRecentCommits(database, args)
-		return
-	}
-
-	if len(database) == 0 {
-		fmt.Printf("\033[33mWARNING\033[0m No repos listed in $HOME/.config/repos.yml\n")
-	}
-
-	if args.listNames {
-		for _, ri := range database {
-			fmt.Printf("%s\n", ri.Config.Name)
-		}
-		return
-	}
-
-	if args.repo != "" {
-		exitCode, err := newShellInRepo(database, args.repo)
-		if err != nil {
-			panic(err)
-		}
-		os.Exit(exitCode)
-	}
-	if args.getDir != "" {
-		repoDir, err := getRepoDir(database, args.getDir)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(repoDir)
-		return
-	}
-
-	sem := make(chan struct{}, args.njobs)
-	infoCh := make(chan *repoInfo)
-	var wg sync.WaitGroup
-	for _, ri := range database {
-		wg.Add(1)
-		go func(r *repoInfo) {
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			var err error
-			r.State, err = r.Config.getState(!args.noFetch)
-			if err != nil {
-				fmt.Println(err)
-				r.State.RemoteState = RemoteStateUnknown
-			}
-			infoCh <- r
-		}(ri)
-	}
-	printRepoInfoHeader()
-	go func(wg *sync.WaitGroup) {
-		for ri := range infoCh {
-			printRepoInfo(ri)
-			wg.Done()
-		}
-	}(&wg)
-
-	wg.Wait()
 }
 
 
@@ -476,6 +368,118 @@ func printRepoInfo(ri *repoInfo) {
 	fmt.Printf(" %-4d Hours", int(dt.Hours()))
 	fmt.Printf(" %s\n", ri.Config.Comment)
 }
+
+func main() {
+
+	args := getArgs()
+	if args.generateConfig {
+		generateConfig("")
+		return
+	}
+
+	if args.path != "" {
+		ri := repoInfo{}
+		ri.Config.Name = fmt.Sprintf("-path %s", args.path)
+		ri.Config.Path = args.path
+		var err error
+		ri.State, err = ri.Config.getState(!args.noFetch)
+		if err != nil {
+			panic(err)
+		}
+		printRepoInfo(&ri)
+		return
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	var databaseFile string
+	if args.configFile != "" {
+		databaseFile = args.configFile
+	} else {
+		databaseFile = filepath.Join(home, ".config", "repos.yml")
+	}
+
+	database, err := readDatabase(databaseFile)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	if len(database) == 0 {
+		fmt.Printf("\033[33mWARNING\033[0m No repos listed in $HOME/.config/repos.yml\n")
+	}
+
+
+	if args.recent {
+		showRecentCommits(database, args)
+		return
+	}
+
+	if args.listNames {
+		for _, ri := range database {
+			fmt.Printf("%s\n", ri.Config.Name)
+		}
+		return
+	}
+
+	if args.repo != "" {
+		exitCode, err := newShellInRepo(database, args.repo)
+		if err != nil {
+			panic(err)
+		}
+		os.Exit(exitCode)
+	}
+
+	if args.getDir != "" {
+		repoDir, err := getRepoDir(database, args.getDir)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(repoDir)
+		return
+	}
+
+
+	sem := make(chan struct{}, args.njobs)
+	infoCh := make(chan *repoInfo)
+	var wg sync.WaitGroup
+	for _, ri := range database {
+		wg.Add(1)
+		go func(r *repoInfo) {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			var err error
+			r.State, err = r.Config.getState(!args.noFetch)
+			if err != nil {
+				fmt.Println(err)
+				r.State.RemoteState = RemoteStateUnknown
+			}
+			infoCh <- r
+		}(ri)
+	}
+	printRepoInfoHeader()
+	go func(wg *sync.WaitGroup) {
+		for ri := range infoCh {
+			printRepoInfo(ri)
+			wg.Done()
+		}
+	}(&wg)
+
+	wg.Wait()
+}
+
+
+func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) error {
+
+	for _, ri := range database {
+		fmt.Fprintf(os.Stdout, "complete -f -c repos -n 'contains -- -r (commandline -opc)' -a %s -d %s\n", ri.Config.Name, ri.Config.Path)
+	}
+
+	return nil
+}
+
 
 func newShellInDir(directory string) (int, error) {
 
