@@ -322,47 +322,7 @@ func getDummyRepo() *repoInfo {
 	}
 	return &ri
 }
-func newShellInDir(directory string) (int, error) {
 
-	fmt.Fprintf(os.Stderr, "\033[33mWARNING: This is a beta feature, maybe use rcd instead\033[0m\n")
-	err := os.Chdir(directory)
-	if err != nil {
-		return 1, fmt.Errorf("could not cd to '%s', : %v", directory, err)
-	}
-	cmd := exec.Command("/bin/bash", "-l")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	fmt.Printf("\033[1;37m==> \033[0mStarting new shell in \033[1;32m%s\033[0m\n", directory)
-	baseEnv := []string{
-		"DISPLAY=" + os.Getenv("DISPLAY"),
-		"HOME=" + os.Getenv("HOME"),
-		"LANG=" + os.Getenv("LANG"),
-		"LC_TERMINAL=" + os.Getenv("LC_TERMINAL"),
-		"LC_TERMINAL_VERSION=" + os.Getenv("LC_TERMINAL_VERSION"),
-		"LOGNAME=" + os.Getenv("LOGNAME"),
-		"MAIL=" + os.Getenv("MAIL"),
-		"SHELL=" + os.Getenv("SHELL"),
-		"SSH_CLIENT=" + os.Getenv("SSH_CLIENT"),
-		"SSH_CONNECTION=" + os.Getenv("SSH_CONNECTION"),
-		"TERM=" + os.Getenv("TERM"),
-		"TMUX=" + os.Getenv("TMUX"),
-		"USER=" + os.Getenv("USER"),
-	}
-	cmd.Env = append(baseEnv, "REPOS_CONTEXT="+directory)
-	err = cmd.Run()
-	fmt.Printf("\033[1;37m==> \033[0mBack from new shell in \033[1;32m%s\033[0m\n", directory)
-	return cmd.ProcessState.ExitCode(), nil
-}
-
-func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
-	for _, ri := range database {
-		if ri.Config.Name == repoName {
-			return newShellInDir(ri.Config.Path)
-		}
-	}
-	return 1, fmt.Errorf("could not find repo '%s' in ~/.config/repos.yml", repoName)
-}
 func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) error {
 
 	for _, ri := range database {
@@ -532,4 +492,46 @@ func printRepoInfo(ri *repoInfo) {
 	dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
 	fmt.Printf(" %-4d Hours", int(dt.Hours()))
 	fmt.Printf(" %s\n", ri.Config.Comment)
+}
+
+func newShellInDir(directory string) (int, error) {
+
+	fmt.Fprintf(os.Stderr, "\033[33mWARNING: This is a beta feature, maybe use rcd instead\033[0m\n")
+	err := os.Chdir(directory)
+	if err != nil {
+		return 1, fmt.Errorf("could not cd to '%s', : %v", directory, err)
+	}
+	cmd := exec.Command("/bin/bash", "-l")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	fmt.Printf("\033[1;37m==> \033[0mStarting new shell in \033[1;32m%s\033[0m\n", directory)
+	baseEnv := []string{
+		"DISPLAY=" + os.Getenv("DISPLAY"),
+		"HOME=" + os.Getenv("HOME"),
+		"LANG=" + os.Getenv("LANG"),
+		"LC_TERMINAL=" + os.Getenv("LC_TERMINAL"),
+		"LC_TERMINAL_VERSION=" + os.Getenv("LC_TERMINAL_VERSION"),
+		"LOGNAME=" + os.Getenv("LOGNAME"),
+		"MAIL=" + os.Getenv("MAIL"),
+		"SHELL=" + os.Getenv("SHELL"),
+		"SSH_CLIENT=" + os.Getenv("SSH_CLIENT"),
+		"SSH_CONNECTION=" + os.Getenv("SSH_CONNECTION"),
+		"TERM=" + os.Getenv("TERM"),
+		"TMUX=" + os.Getenv("TMUX"),
+		"USER=" + os.Getenv("USER"),
+	}
+	cmd.Env = append(baseEnv, "REPOS_CONTEXT="+directory)
+	err = cmd.Run()
+	fmt.Printf("\033[1;37m==> \033[0mBack from new shell in \033[1;32m%s\033[0m\n", directory)
+	return cmd.ProcessState.ExitCode(), nil
+}
+
+func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
+	for _, ri := range database {
+		if ri.Config.Name == repoName {
+			return newShellInDir(ri.Config.Path)
+		}
+	}
+	return 1, fmt.Errorf("could not find repo '%s' in ~/.config/repos.yml", repoName)
 }
