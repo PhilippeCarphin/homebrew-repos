@@ -187,50 +187,6 @@ func showRecentCommits(database []*repoInfo, args args) error {
 	return nil
 }
 
-func generateConfig(filename string) {
-
-	y := strings.Builder{}
-	nbRepos := 0
-
-	subdirs, err := ioutil.ReadDir(".")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Fprintf(&y, "repos:\n")
-	for _, f := range subdirs {
-		gitdir := fmt.Sprintf("%s/.git", f.Name())
-		if _, err := os.Stat(gitdir); err != nil {
-			continue
-		}
-		nbRepos++
-		repoName := f.Name()
-		repoPath := fmt.Sprintf("%s/%s", os.Getenv("PWD"), f.Name())
-		fmt.Fprintf(&y, "  %s:\n    path: \"%s\"\n", repoName, repoPath)
-	}
-
-	if nbRepos == 0 {
-		fmt.Fprintf(os.Stderr, "No git repos found in %s\n", os.Getenv("PWD"))
-	}
-
-	if filename != "" {
-		ioutil.WriteFile(filename, []byte(y.String()), 0644)
-	} else {
-		fmt.Printf(y.String())
-	}
-}
-
-func (r repoConfig) getTimeSinceLastCommit() (time.Time, error) {
-	cmd := r.gitCommand("log", "--pretty=format:%at", "-1")
-	out, err := cmd.Output()
-	if err != nil {
-		return time.Unix(0, 0), fmt.Errorf("Could not get time since last commit for repo '%s' : %v", r.Path, err)
-	}
-	var timestamp int64
-	fmt.Sscanf(string(out), "%d", &timestamp)
-	return time.Unix(timestamp, 0), nil
-}
-
 func readDatabase(filename string) ([]*repoInfo, error) {
 	repoFile := RepoFile{}
 
@@ -306,21 +262,48 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 	return state, nil
 }
 
-func getDummyRepo() *repoInfo {
+func generateConfig(filename string) {
 
-	ri := repoInfo{
-		Config: repoConfig{
-			Path:      "/my/repo/path/focustree",
-			Name:      "focustree",
-			ShortName: "ft",
-		},
-		State: repoState{
-			Dirty:               true,
-			UntrackedFiles:      false,
-			TimeSinceLastCommit: time.Unix(0, 0),
-		},
+	y := strings.Builder{}
+	nbRepos := 0
+
+	subdirs, err := ioutil.ReadDir(".")
+	if err != nil {
+		panic(err)
 	}
-	return &ri
+
+	fmt.Fprintf(&y, "repos:\n")
+	for _, f := range subdirs {
+		gitdir := fmt.Sprintf("%s/.git", f.Name())
+		if _, err := os.Stat(gitdir); err != nil {
+			continue
+		}
+		nbRepos++
+		repoName := f.Name()
+		repoPath := fmt.Sprintf("%s/%s", os.Getenv("PWD"), f.Name())
+		fmt.Fprintf(&y, "  %s:\n    path: \"%s\"\n", repoName, repoPath)
+	}
+
+	if nbRepos == 0 {
+		fmt.Fprintf(os.Stderr, "No git repos found in %s\n", os.Getenv("PWD"))
+	}
+
+	if filename != "" {
+		ioutil.WriteFile(filename, []byte(y.String()), 0644)
+	} else {
+		fmt.Printf(y.String())
+	}
+}
+
+func (r repoConfig) getTimeSinceLastCommit() (time.Time, error) {
+	cmd := r.gitCommand("log", "--pretty=format:%at", "-1")
+	out, err := cmd.Output()
+	if err != nil {
+		return time.Unix(0, 0), fmt.Errorf("Could not get time since last commit for repo '%s' : %v", r.Path, err)
+	}
+	var timestamp int64
+	fmt.Sscanf(string(out), "%d", &timestamp)
+	return time.Unix(timestamp, 0), nil
 }
 
 func generateShellAutocomplete(database []*repoInfo, args args, out io.Writer) error {
@@ -535,3 +518,22 @@ func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
 	}
 	return 1, fmt.Errorf("could not find repo '%s' in ~/.config/repos.yml", repoName)
 }
+
+// Unused function
+// func getDummyRepo() *repoInfo {
+//
+// 	ri := repoInfo{
+// 		Config: repoConfig{
+// 			Path:      "/my/repo/path/focustree",
+// 			Name:      "focustree",
+// 			ShortName: "ft",
+// 		},
+// 		State: repoState{
+// 			Dirty:               true,
+// 			UntrackedFiles:      false,
+// 			TimeSinceLastCommit: time.Unix(0, 0),
+// 		},
+// 	}
+// 	return &ri
+// }
+
