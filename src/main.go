@@ -73,6 +73,7 @@ type repoConfig struct {
 	ShortName string
 	Fetch     bool
 	Comment   string
+	Remote    string
 }
 
 type repoInfo struct {
