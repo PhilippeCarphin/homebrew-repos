@@ -58,6 +58,7 @@ macro(orgmanpages_add_man_target)
 
             # The '-s' is important
             COMMAND mkdir -p ${target_dir} && pandoc -s -f org -t man ${org_file} -o ${target_file}
+            DEPENDS ${org_file}
         )
         add_custom_target(${target_base} DEPENDS ${target_file})
 
