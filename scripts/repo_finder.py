@@ -7,27 +7,32 @@ def is_git_repo(path):
         if not os.path.isdir(path):
             return False
         contents = os.listdir(path)
-        for d in contents:
-            if d == ".git":
-                return True
+
+        if '.git' in contents:
+            return True
+
         if 'branches' in contents and 'refs' in contents and 'objects' in contents and 'packed-refs' in contents:
             return True
+
     except PermissionError:
         return False
+
     return False
 
 def find_git_repos(directory):
+
     if is_git_repo(directory):
         yield directory
         return
+
     if not os.path.isdir(directory):
         return
-    # print(directory)
+
     try:
         contents = os.listdir(directory)
     except PermissionError:
         return
-    #print(contents)
+
     new = filter(lambda c: not c.startswith("."), contents)
     subdirs = list(filter( lambda d:os.path.isdir(os.path.join(directory, d)), new))
     for d in subdirs:
