@@ -7,14 +7,13 @@
 * SYNOPSIS
 
 #+begin_src shell
-git-recent [-d DAYS]
+git-recent [--all] [-d DAYS]
 #+end_src
 
-Change to the path associated to ~REPO~ in ~$HOME/.config/repos.yml~.  This
-function has autocompletion.
+Shows recent commits on =HEAD= if =--all= is not specified going back up to =DAYS=
+days.
 
-See ~man (1) repos~ for more information about the ~repos~ command and the
-~repos.yml~ configuration file.
+Adding =--all= will have it do the same for all local branches.
 
 * OPTIONS
 
@@ -22,6 +21,9 @@ See ~man (1) repos~ for more information about the ~repos~ command and the
 
 Go back ~DAYS~ days before yesterday when searching for recent commits.
 
+** ~--all~
+
+Show recent commits for all branches one at a time.
 
 * SEE ALSO
 repos, repo-finder, rcd
