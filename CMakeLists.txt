@@ -31,17 +31,22 @@ add_custom_command(
 add_custom_target(build-repos ALL DEPENDS repos)
 
 install(PROGRAMS ${repos_exec} DESTINATION bin)
-install(
-    FILES
-        completions/repos_completion.bash
-        completions/repos_completion.fish
-        completions/repos_completion.zsh
-    DESTINATION
-        share/completions/repos
-)
+
 install(
     FILES
         completions/repos_completion.bash
     DESTINATION
         etc/bash_completion.d
+)
+install(
+    FILES
+        completions/repos_completion.fish
+    DESTINATION
+        etc/fish_completion.d
+)
+install(
+    FILES
+        completions/repos_completion.zsh
+    DESTINATION
+        etc/zsh_completion.d
 )
