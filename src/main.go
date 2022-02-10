@@ -178,11 +178,11 @@ func showRecentCommits(database []*repoInfo, args args) error {
 		cmd := ri.Config.gitCommand("recent", "--all", "-d", fmt.Sprintf("%d", (args.days)))
 		out, err := cmd.Output()
 		if err != nil {
-			fmt.Printf("Could not get recent commits for %s: %v\n", ri.Config.Path, err)
+			fmt.Fprintf(os.Stderr, "Could not get recent commits for %s: %v\n", ri.Config.Path, err)
 		}
 		if len(out) > 0 {
-			fmt.Printf("\033[1;4;35mRecent commits on all branches for %s\033[0m\n", ri.Config.Path)
-			fmt.Print(string(out))
+			fmt.Fprintf(os.Stderr, "\033[1;4;35mRecent commits on all branches for %s\033[0m\n", ri.Config.Path)
+			fmt.Fprint(os.Stderr, string(out))
 		}
 	}
 	return nil
@@ -405,11 +405,11 @@ func main() {
 
 	database, err := readDatabase(databaseFile)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	if len(database) == 0 {
-		fmt.Printf("\033[33mWARNING\033[0m No repos listed in $HOME/.config/repos.yml\n")
+		fmt.Fprintf(os.Stderr, "\033[33mWARNING\033[0m No repos listed in $HOME/.config/repos.yml\n")
 	}
 
 
@@ -454,7 +454,7 @@ func main() {
 			var err error
 			r.State, err = r.Config.getState(!args.noFetch)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(os.Stderr, err)
 				r.State.RemoteState = RemoteStateUnknown
 			}
 			infoCh <- r
@@ -493,7 +493,7 @@ func newShellInDir(directory string) (int, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	fmt.Printf("\033[1;37m==> \033[0mStarting new shell in \033[1;32m%s\033[0m\n", directory)
+	fmt.Fprintf(os.Stderr, "\033[1;37m==> \033[0mStarting new shell in \033[1;32m%s\033[0m\n", directory)
 	baseEnv := []string{
 		"DISPLAY=" + os.Getenv("DISPLAY"),
 		"HOME=" + os.Getenv("HOME"),
@@ -511,7 +511,7 @@ func newShellInDir(directory string) (int, error) {
 	}
 	cmd.Env = append(baseEnv, "REPOS_CONTEXT="+directory)
 	err = cmd.Run()
-	fmt.Printf("\033[1;37m==> \033[0mBack from new shell in \033[1;32m%s\033[0m\n", directory)
+	fmt.Fprintf(os.Stderr, "\033[1;37m==> \033[0mBack from new shell in \033[1;32m%s\033[0m\n", directory)
 	return cmd.ProcessState.ExitCode(), nil
 }
 

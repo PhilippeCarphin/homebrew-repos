@@ -106,7 +106,7 @@ __suggest_repos_key_path_values(){
 }
 
 __suggest_repos_key_r_values(){
-    candidates="$(repos -list-names)"
+    candidates="$(repos -list-names 2>/dev/null)"
 }
 
 complete -o default -F __complete_repos repos
@@ -124,7 +124,12 @@ Usage:
 See 'man rcd' for more information."
         return
     fi
-    local dir=$(repos -get-dir $1)
+    local dir
+    if ! dir=$(repos -get-dir $1 2>/dev/null) ; then
+        echo "ERROR: No repo '$1' in ~/.config/repos.yml" >&2
+        return
+    fi
+
     printf "\033[33mcd $dir\033[0m\n"
     cd $dir
 }
@@ -135,7 +140,7 @@ __complete_rcd(){
 	local cur="${COMP_WORDS[COMP_CWORD]}"
 	# Compgen: takes the list of candidates and selects those matching ${cur}.
 	# Once COMPREPLY is set, the shell does the rest.
-	COMPREPLY=( $(compgen -W "$(repos -list-names)" -- ${cur}))
+	COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}))
 }
 complete -o default -F __complete_rcd rcd
 
