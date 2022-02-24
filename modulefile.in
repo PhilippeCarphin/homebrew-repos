@@ -1,0 +1,5 @@
+#%Module
+
+# source-sh bash @CMAKE_INSTALL_PREFIX@/etc/$::env(HOME)/sourced_file.bash
+append-path PATH @CMAKE_INSTALL_PREFIX@/bin
+

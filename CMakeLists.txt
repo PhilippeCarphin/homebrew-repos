@@ -30,6 +30,8 @@ add_custom_command(
 
 add_custom_target(build-repos ALL DEPENDS repos)
 
+configure_file(modulefile.in modulefile @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/modulefile DESTINATION $ENV{HOME}/privatemodules RENAME repos)
 install(PROGRAMS ${repos_exec} DESTINATION bin)
 
 install(
