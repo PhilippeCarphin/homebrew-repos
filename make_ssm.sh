@@ -4,7 +4,7 @@
 # Philippe Carphin for more info.
 
 spkg-buildpackage \
-    --name ec-git-tools \
-    --description "Extra tools for git things" \
-    --version 0.7.0 \
-    --sourced-file share/ec-git-tools/git-prompt-with-setup.sh
+    --name repos \
+    --description "Phil's repo thing" \
+    --version $(git describe | tr -d 'v') \
+    --sourced-file etc/bash_completion.d/repos_completion.bash
