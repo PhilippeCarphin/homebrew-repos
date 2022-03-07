@@ -59,7 +59,7 @@ home_dirs = [
 ]
 repos = []
 for d in home_dirs:
-    new_repos = list(find_git_repos(os.getcwd() + "/" + d))
+    new_repos = list(find_git_repos(os.environ["PWD"] + "/" + d))
     repos += new_repos
 # repos = list(find_git_repos(os.getcwd()+"/workspace"))
 # repos += list(find_git_repos(os.getcwd()+"/Documents/GitHub"))
