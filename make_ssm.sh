@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e -o pipefail
 
 # NOTE: This uses an unpublished ssm package creation tool, please see
 # Philippe Carphin for more info.
@@ -34,5 +35,5 @@ spkg-buildpackage \
     --version ${repos_version} \
     --sourced-file etc/bash_completion.d/repos_completion.bash
 
-# spkg-trypackage ../${name}_${repos_version}_${arch}.ssm ~/site5/ssm/${name}_${repos_version}_${arch}
+spkg-trypackage ../${name}_${repos_version}_${arch}.ssm ~/site5/ssm/${name}_${repos_version}_${arch}
 
