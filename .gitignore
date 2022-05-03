@@ -1,13 +1,4 @@
-repo-manager
-/*.html
-/Rename_to_.repos.yml
-repos
-bin
-usr
-debian/*.log
-*.ssm
-repos*_all
-*.ssmd
 localinstall
-*.1
-spkg-build
+build
+repos_*_all
+*.ssm

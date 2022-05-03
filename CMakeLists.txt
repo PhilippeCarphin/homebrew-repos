@@ -15,8 +15,7 @@ orgmanpages_add_man_target()
 
 include(CTest)
 add_custom_target(check COMMAND CTEST_OUTPUT_ON_FAILURE=true ${CMAKE_CTEST_COMMAND})
-install(PROGRAMS scripts/git-recent DESTINATION bin)
-install(PROGRAMS scripts/repo_finder.py DESTINATION bin RENAME repo-finder)
+
 if(SSM_PACKAGE_NAME)
     install(FILES completions/repos_completion.bash DESTINATION etc/profile.d/ RENAME ${SSM_PACKAGE_NAME}.sh)
 endif()
@@ -33,6 +32,8 @@ add_custom_target(build-repos ALL DEPENDS repos)
 configure_file(modulefile.in modulefile @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/modulefile DESTINATION $ENV{HOME}/privatemodules RENAME repos)
 install(PROGRAMS ${repos_exec} DESTINATION bin)
+install(DIRECTORY bin/ DESTINATION bin USE_SOURCE_PERMISSIONS)
+install(DIRECTORY libexec/ DESTINATION libexec USE_SOURCE_PERMISSIONS)
 
 install(
     FILES
