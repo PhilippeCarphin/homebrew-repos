@@ -124,14 +124,23 @@ Usage:
 See 'man rcd' for more information."
         return
     fi
-    local dir
-    if ! dir=$(repos -get-dir $1 2>/dev/null) ; then
+
+    local repo_name=${1%%/*}
+    local repo_subdir
+    if [[ ${1} == */* ]] ; then
+        local repo_subdir=${1#*/}
+    fi
+    local repo_dir
+    if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
         echo "ERROR: No repo '$1' in ~/.config/repos.yml" >&2
-        return
+        return 1
     fi
 
+    local dir
+    dir=${repo_dir}/${repo_subdir}
     printf "\033[33mcd $dir\033[0m\n"
     cd $dir
+
 }
 
 __complete_rcd(){
@@ -140,7 +149,39 @@ __complete_rcd(){
 	local cur="${COMP_WORDS[COMP_CWORD]}"
 	# Compgen: takes the list of candidates and selects those matching ${cur}.
 	# Once COMPREPLY is set, the shell does the rest.
-	COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}))
+
+    local repo_name=${cur%%/*}
+    local repo_subdir=${cur#*/}
+
+
+    if [[ "${cur}" == */* ]] ; then
+        if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
+            return
+        fi
+        compopt -o filenames
+        local i=0
+        # echo "\${repo_dir}/\${repo_subdir}=${repo_dir}/${repo_subdir}" >> ~/.log.txt
+        for full_path in $(compgen -d -- ${repo_dir}/${repo_subdir}) ; do
+            if [[ $(basename ${full_path}) == .* ]] ; then
+                continue
+            fi
+            # echo "full_path=${full_path}" >> ~/.log.txt
+            relative_path="${full_path##${repo_dir}}"
+            # echo "relative_path=${relative_path}" >> ~/.log.txt
+            COMPREPLY[i++]="${repo_name}${relative_path}"
+            last_full_path=${full_path}
+        done
+
+    else
+        COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}))
+    fi
+
+    if ((${#COMPREPLY[@]} == 1)) ; then
+        if ! [[ $(find ${last_full_path} -maxdepth 1 -type d) == ${last_full_path} ]] ; then
+            compopt -o nospace
+            COMPREPLY[0]+=/;
+        fi
+    fi;
 }
 complete -o default -F __complete_rcd rcd
 
