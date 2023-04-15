@@ -161,6 +161,7 @@ __complete_rcd(){
         compopt -o filenames
         local i=0
         # echo "\${repo_dir}/\${repo_subdir}=${repo_dir}/${repo_subdir}" >> ~/.log.txt
+        local last_full_path
         for full_path in $(compgen -d -- ${repo_dir}/${repo_subdir}) ; do
             if [[ $(basename ${full_path}) == .* ]] ; then
                 continue
@@ -171,18 +172,21 @@ __complete_rcd(){
             COMPREPLY[i++]="${repo_name}${relative_path}"
             last_full_path=${full_path}
         done
-
+        if ((${#COMPREPLY[@]} == 1)) ; then
+            if ! [[ $(find ${last_full_path} -maxdepth 1 -type d) == ${last_full_path} ]] ; then
+                compopt -o nospace
+                COMPREPLY[0]+=/;
+            fi
+        fi;
     else
         COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}))
-    fi
-
-    if ((${#COMPREPLY[@]} == 1)) ; then
-        if ! [[ $(find ${last_full_path} -maxdepth 1 -type d) == ${last_full_path} ]] ; then
+        if ((${#COMPREPLY[@]} == 1)) ; then
             compopt -o nospace
             COMPREPLY[0]+=/;
-        fi
-    fi;
+        fi;
+    fi
 }
+
 complete -F __complete_rcd rcd
 
 if ! [ -e ~/.config/repos.yml ] ; then
