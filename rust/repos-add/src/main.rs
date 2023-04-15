@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use dirs;
 use std::fs::File;
+use std::error::Error;
 // type RepoFile struct {
 // 	Repos  map[string]repoConfig
 // 	Config config
@@ -87,28 +88,48 @@ fn get_repo_data() -> Result<RepoFile, &'static str> {
     }
 }
 
-fn main() {
-    if let Ok(mut repo_data) = get_repo_data() {
-        let new = RepoConfig{path:"path/to/my_repo".to_string(), name: None, fetch: None, remote: None, comment: None, short_name:None};
-        repo_data.repos.insert("my_repo".to_string(), new);
-
-        /*
-         * Write modified repo_data to a different file for testing
-         */
-        if let Some(mut path) = dirs::home_dir() {
-            path.push(".config");
-            path.push("repos_rust_test");
-            path.set_extension("yml");
-            let c = File::create(&path);
-            if let Ok(c) = c {
-                if let Err(err) = serde_yaml::to_writer(c, &repo_data) {
-                    println!("Error serializing to new file {:?}", err);
-                }
-            } else if let Err(err) = c {
-                println!("Error creating file : {:?}", err);
+fn is_git_repo(dir: &std::path::PathBuf) -> Result<bool, Box<dyn Error>> {
+    let c = std::fs::read_dir(&dir)?;
+    for cf in c {
+        if let Ok(cf) = cf {
+            let name = cf.file_name().to_str().ok_or("PathBuf::to_str()")?.to_string();
+            if name == ".git" {
+                return Ok(true)
             }
-        } else {
-            println!("Could not get home dir");
         }
     }
+    Ok(false)
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut repo_data = get_repo_data()?;
+    let wd = std::env::current_dir()?;
+    let dir = wd
+        .to_str()
+        .ok_or("Pathbuf to str")?
+        .to_string();
+    if ! is_git_repo(&wd)? {
+        return Err(format!("Current directory is not a git repo: '{dir}'").into());
+    }
+    let new = RepoConfig {
+        path: dir,
+        name: None,
+        fetch: None,
+        remote: None,
+        comment: None,
+        short_name: None,
+    };
+    repo_data.repos.insert("my_repo".to_string(), new);
+    println!("Adding repo '{}' to test file", "~/.config/repos.rust_test.yml");
+
+    /*
+     * Write modified repo_data to a different file for testing
+     */
+    let mut path = dirs::home_dir().ok_or("Could not get HOME dir")?;
+    path.push(".config");
+    path.push("repos_rust_test");
+    path.set_extension("yml");
+    let c = File::create(&path)?;
+    serde_yaml::to_writer(c, &repo_data)?;
+    Ok(())
 }
