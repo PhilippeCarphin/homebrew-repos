@@ -183,7 +183,7 @@ __complete_rcd(){
         fi
     fi;
 }
-complete -o default -F __complete_rcd rcd
+complete -F __complete_rcd rcd
 
 if ! [ -e ~/.config/repos.yml ] ; then
     printf "\033[33mrepos_completion.bash : WARNING: No '~/.config/repos.yml' file found.\n" >&2
