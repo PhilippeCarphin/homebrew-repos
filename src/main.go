@@ -35,6 +35,7 @@ type args struct {
 	configFile     string
 	recent         bool
 	days           int
+	all            bool
 }
 
 
@@ -57,6 +58,7 @@ func getArgs() args {
 	flag.StringVar(&a.configFile, "F", "", "Use a different config file that ~/.config/repos.yml")
 	flag.BoolVar(&a.recent, "recent", false, "Show today and yesterday's commits for all repos")
 	flag.IntVar(&a.days, "days", 1, "Go back more than one day before yesterday when using option -recent")
+	flag.BoolVar(&a.all, "all", false, "Print all repos instead of just the onse with modifications")
 	flag.Parse()
 
 	return a
@@ -463,7 +465,9 @@ func main() {
 	printRepoInfoHeader()
 	go func(wg *sync.WaitGroup) {
 		for ri := range infoCh {
-			printRepoInfo(ri)
+			if args.all || ri.State.Dirty || ri.State.RemoteState != RemoteStateNormal {
+				printRepoInfo(ri)
+			}
 			wg.Done()
 		}
 	}(&wg)
