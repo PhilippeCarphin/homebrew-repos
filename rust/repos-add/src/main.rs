@@ -1,20 +1,22 @@
-use serde_yaml;
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 use dirs;
-use std::fs::File;
+use serde::{Deserialize, Serialize};
+use serde_yaml;
+use std::collections::BTreeMap;
 use std::error::Error;
+use std::fs::File;
+use std::path::PathBuf;
+
 // type RepoFile struct {
 // 	Repos  map[string]repoConfig
 // 	Config config
 // }
-use std::collections::HashMap;
-
 #[derive(Debug, Serialize, Deserialize)]
 struct RepoFile {
-    repos: HashMap<String, RepoConfig>,
+    repos: BTreeMap<String, RepoConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     config: Option<Config>,
 }
+
 // type config struct {
 // 	Color    bool
 // 	Defaults repoConfig
