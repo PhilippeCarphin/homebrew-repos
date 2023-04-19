@@ -26,6 +26,7 @@ struct Config {
     color: bool,
     defaults: RepoConfig,
 }
+
 //
 // type repoConfig struct {
 // 	Path      string
@@ -37,25 +38,24 @@ struct Config {
 // }
 #[derive(Debug, Serialize, Deserialize)]
 struct RepoConfig {
-    path:      String,
+    path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name:      Option<String>,
+    name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     short_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    fetch:     Option<bool>,
+    fetch: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    comment:   Option<String>,
+    comment: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    remote:    Option<String>,
+    remote: Option<String>,
 }
 
-//
 // type repoInfo struct {
 // 	Config repoConfig
 // 	State  repoState
 // }
-//
+
 // type repoState struct {
 // 	Dirty               bool
 // 	UntrackedFiles      bool
@@ -63,31 +63,18 @@ struct RepoConfig {
 // 	RemoteState         RemoteState
 // 	StagedChanges       bool
 // }
-//
-fn get_repo_file() -> Result<PathBuf,&'static str> {
-    if let Some(mut path) = dirs::home_dir() {
-        path.push(".config");
-        path.push("repos");
-        path.set_extension("yml");
-        Ok(path)
-    } else {
-        Err("Could not get home dir")
-    }
+
+fn get_repo_file() -> Result<PathBuf, Box<dyn Error>> {
+    Ok(dirs::home_dir()
+        .ok_or("Could not get home dir")?
+        .join(".config/repos.yml"))
 }
 
-fn get_repo_data() -> Result<RepoFile, &'static str> {
+fn get_repo_data() -> Result<RepoFile, Box<dyn Error>> {
     let filepath = get_repo_file()?;
-    let file = File::open(filepath.clone());
-    if let Ok(file) = file {
-        let repo_file: Result<RepoFile,_> = serde_yaml::from_reader(file);
-        if let Ok(repo_file) = repo_file {
-            Ok(repo_file)
-        } else {
-            Err("Could not extract RepoFile struct from file contents")
-        }
-    } else {
-        Err("Error opening file")
-    }
+    let file = File::open(filepath.clone())?;
+    let repo_data: RepoFile = serde_yaml::from_reader(file)?;
+    Ok(repo_data)
 }
 
 fn is_git_repo(dir: &std::path::PathBuf) -> Result<bool, Box<dyn Error>> {
@@ -127,11 +114,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     /*
      * Write modified repo_data to a different file for testing
      */
-    let mut path = dirs::home_dir().ok_or("Could not get HOME dir")?;
-    path.push(".config");
-    path.push("repos_rust_test");
-    path.set_extension("yml");
-    let c = File::create(&path)?;
-    serde_yaml::to_writer(c, &repo_data)?;
+    let mut output_path = dirs::home_dir().ok_or("Could not get home dir")?;
+    output_path.push(".config");
+    output_path.push("repos_rust_test");
+    output_path.set_extension("yml");
+    let f = File::create(&output_path)?;
+    serde_yaml::to_writer(f, &repo_data)?;
     Ok(())
 }
