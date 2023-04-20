@@ -36,6 +36,7 @@ type args struct {
 	recent         bool
 	days           int
 	all            bool
+	noignore       bool
 }
 
 
@@ -59,6 +60,7 @@ func getArgs() args {
 	flag.BoolVar(&a.recent, "recent", false, "Show today and yesterday's commits for all repos")
 	flag.IntVar(&a.days, "days", 1, "Go back more than one day before yesterday when using option -recent")
 	flag.BoolVar(&a.all, "all", false, "Print all repos instead of just the onse with modifications")
+	flag.BoolVar(&a.noignore, "noignore", false, "Disregard the ignore flag on repos")
 	flag.Parse()
 
 	return a
@@ -76,6 +78,7 @@ type repoConfig struct {
 	Fetch     bool
 	Comment   string
 	Remote    string
+	Ignore    bool
 }
 
 type repoInfo struct {
@@ -449,7 +452,11 @@ func main() {
 	var wg sync.WaitGroup
 	for _, ri := range database {
 		wg.Add(1)
-		go func(r *repoInfo) {
+		go func(r *repoInfo, wg *sync.WaitGroup) {
+			if r.Config.Ignore && !args.noignore {
+				wg.Done()
+				return
+			}
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			var err error
@@ -459,7 +466,7 @@ func main() {
 				r.State.RemoteState = RemoteStateUnknown
 			}
 			infoCh <- r
-		}(ri)
+		}(ri, &wg)
 	}
 	printRepoInfoHeader()
 	go func(wg *sync.WaitGroup) {
@@ -471,6 +478,10 @@ func main() {
 		}
 	}(&wg)
 
+    /*
+     * Wait until wg.Done() has been called as many times as wg.Add(1)
+     * has been called.
+     */
 	wg.Wait()
 }
 
