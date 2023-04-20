@@ -228,6 +228,26 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 	state := repoState{}
 	var err error
 
+	state.TimeSinceLastCommit, err = r.getTimeSinceLastCommit()
+	if err != nil {
+		return state, err
+	}
+
+	state.Dirty, err = r.hasUnstagedChanges()
+	if err != nil {
+		return state, err
+	}
+
+	state.UntrackedFiles, err = r.hasUntrackedFiles()
+	if err != nil {
+		return state, err
+	}
+
+	state.StagedChanges, err = r.hasStagedChanges()
+	if err != nil {
+		return state, err
+	}
+
 	if fetch {
 		err := r.fetch()
 		if err != nil {
@@ -241,26 +261,6 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 		return state, err
 	}
 	state.RemoteState = remoteState
-
-	state.Dirty, err = r.hasUnstagedChanges()
-	if err != nil {
-		return state, err
-	}
-
-	state.UntrackedFiles, err = r.hasUntrackedFiles()
-	if err != nil {
-		return state, err
-	}
-
-	state.TimeSinceLastCommit, err = r.getTimeSinceLastCommit()
-	if err != nil {
-		return state, err
-	}
-
-	state.StagedChanges, err = r.hasStagedChanges()
-	if err != nil {
-		return state, err
-	}
 
 	return state, nil
 }
@@ -386,7 +386,7 @@ func main() {
 		var err error
 		ri.State, err = ri.Config.getState(!args.noFetch)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "Config.getState ERROR: %v\n", err)
 		}
 		printRepoInfo(&ri)
 		return
