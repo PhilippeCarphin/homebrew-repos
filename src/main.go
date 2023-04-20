@@ -86,7 +86,7 @@ type repoInfo struct {
 type repoState struct {
 	Dirty               bool
 	UntrackedFiles      bool
-	TimeSinceLastCommit time.Time
+	TimeSinceLastCommit time.Duration
 	RemoteState         RemoteState
 	StagedChanges       bool
 }
@@ -298,15 +298,15 @@ func generateConfig(filename string) {
 	}
 }
 
-func (r repoConfig) getTimeSinceLastCommit() (time.Time, error) {
+func (r repoConfig) getTimeSinceLastCommit() (time.Duration, error) {
 	cmd := r.gitCommand("log", "--pretty=format:%at", "-1")
 	out, err := cmd.Output()
 	if err != nil {
-		return time.Unix(0, 0), fmt.Errorf("Could not get time since last commit for repo '%s' : %v", r.Path, err)
+		return 0, fmt.Errorf("Could not get time since last commit for repo '%s' : %v", r.Path, err)
 	}
 	var timestamp int64
 	fmt.Sscanf(string(out), "%d", &timestamp)
-	return time.Unix(timestamp, 0), nil
+	return time.Now().Sub(time.Unix(timestamp, 0)), nil
 }
 
 func getRepoDir(database []*repoInfo, repoName string) (string, error) {
@@ -367,8 +367,7 @@ func printRepoInfo(ri *repoInfo) {
 	} else {
 		fmt.Printf(" \033[32mNo untracked files\033[0m")
 	}
-	dt := time.Now().Sub(ri.State.TimeSinceLastCommit)
-	fmt.Printf(" %-4d Hours", int(dt.Hours()))
+	fmt.Printf(" %-4d Hours", int(ri.State.TimeSinceLastCommit.Hours()))
 	fmt.Printf(" %s\n", ri.Config.Comment)
 }
 
