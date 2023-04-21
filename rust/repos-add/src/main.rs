@@ -106,9 +106,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         remote: None,
         comment: None,
         short_name: None,
+        ignore: None,
     };
-    repo_data.repos.insert("my_repo".to_string(), new);
-    println!("Adding repo '{}' to test file", "~/.config/repos.rust_test.yml");
+    let key = wd
+        .file_name()
+        .ok_or("pathbuf filename")?
+        .to_str()
+        .ok_or("pathbuf to str")?;
+    repo_data.repos.insert(key.to_string(), new);
+    println!(
+        "Adding repo '{}' to test file",
+        "~/.config/repos_rust_test.yml"
+    );
 
     /*
      * Write modified repo_data to a different file for testing
