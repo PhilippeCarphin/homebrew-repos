@@ -35,6 +35,7 @@ struct Config {
 // 	Fetch     bool
 // 	Comment   string
 // 	Remote    string
+// 	Ignore    bool
 // }
 #[derive(Debug, Serialize, Deserialize)]
 struct RepoConfig {
@@ -49,6 +50,8 @@ struct RepoConfig {
     comment: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     remote: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ignore: Option<bool>,
 }
 
 // type repoInfo struct {
@@ -78,16 +81,12 @@ fn get_repo_data() -> Result<RepoFile, Box<dyn Error>> {
 }
 
 fn is_git_repo(dir: &std::path::PathBuf) -> Result<bool, Box<dyn Error>> {
-    let c = std::fs::read_dir(&dir)?;
-    for cf in c {
-        if let Ok(cf) = cf {
-            let name = cf.file_name().to_str().ok_or("PathBuf::to_str()")?.to_string();
-            if name == ".git" {
-                return Ok(true)
-            }
-        }
+    let mut git_dir = dir.clone();
+    git_dir.push(".git");
+    match std::fs::metadata(git_dir) {
+        Ok(metadata) => Ok(metadata.is_dir()),
+        Err(_) => Ok(false)
     }
-    Ok(false)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -97,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .to_str()
         .ok_or("Pathbuf to str")?
         .to_string();
-    if ! is_git_repo(&wd)? {
+    if !is_git_repo(&wd)? {
         return Err(format!("Current directory is not a git repo: '{dir}'").into());
     }
     let new = RepoConfig {
