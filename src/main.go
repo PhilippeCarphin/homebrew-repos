@@ -471,7 +471,7 @@ func main() {
 	printRepoInfoHeader()
 	go func(wg *sync.WaitGroup) {
 		for ri := range infoCh {
-			if args.all || ri.State.Dirty || ri.State.RemoteState != RemoteStateNormal {
+			if args.all || ri.State.Dirty || ri.State.RemoteState != RemoteStateNormal || ri.State.UntrackedFiles || ri.State.StagedChanges {
 				printRepoInfo(ri)
 			}
 			wg.Done()
