@@ -107,6 +107,23 @@ __suggest_repos_key_r_values(){
 
 complete -o default -F __complete_repos repos
 
+function expand_repo_dir(){
+
+    local repo_name=${1%%/*}
+
+    local repo_subdir
+    if [[ ${1} == */* ]] ; then
+        repo_subdir=${1#*/}
+    fi
+
+    local repo_dir
+    if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
+        return 1
+    fi
+
+    echo "${repo_dir}/${repo_subdir}"
+}
+
 function rcd(){
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] ; then
         echo "rcd : 'repos-cd' is a shell function to cd to repos
@@ -121,22 +138,73 @@ See 'man rcd' for more information."
         return
     fi
 
-    local repo_name=${1%%/*}
-    local repo_subdir
-    if [[ ${1} == */* ]] ; then
-        local repo_subdir=${1#*/}
-    fi
-    local repo_dir
-    if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
-        echo "ERROR: No repo '$1' in ~/.config/repos.yml" >&2
+    local dir
+    if ! dir=$(expand_repo_dir $1) ; then
+        _repos_error "No repo '$1' in ~/.config/repos.yml"
         return 1
     fi
 
-    local dir
-    dir=${repo_dir}/${repo_subdir}
-    printf "\033[33mcd $dir\033[0m\n"
+    if [[ -v __shell_grayscale ]] ; then
+        printf "cd $dir\n"
+    else
+        printf "\033[33mcd $dir\033[0m\n"
+    fi
     cd $dir
 
+}
+
+function _repos_error(){
+    if [[ -v __shell_grayscale ]] ; then
+        printf "${FUNCNAME[1]}: ERROR: $*\n" >&2
+    else
+        printf "${FUNCNAME[1]}: \033[1;31mERROR\033[0m: $*\n" >&2
+    fi
+}
+
+
+
+function rmv(){
+    local -a to_move
+    local colon_found=false
+    for tm in "$@" ; do
+        if [[ ${tm} == ":" ]] ; then
+            shift
+            colon_found=true
+            break
+        fi
+        shift
+        to_move+=("${tm}")
+    done
+    if [[ "${colon_found}" == false ]] ; then
+        _repos_error "rmv requires colon"
+        return 1
+    fi
+    local dest=${1}
+    if [[ -z "${dest}" ]] ; then
+        _repos_error "Destination not specified"
+        return 1
+    fi
+
+    local true_dest
+    if ! true_dest=$(expand_repo_dir ${dest}) ; then
+        _repos_error "No repo '$1' in ~/.config/repos.yml"
+        return 1
+    fi
+
+    local display_true_dest=$(printf "%s\033[1m%s\033[0m/%s\n" \
+        ${true_dest%%${dest}} ${dest%%/*} ${dest#*/})
+    echo "mv ${to_move[@]} ${display_true_dest}"
+    mv "${to_move[@]}" ${true_dest}
+}
+
+function __complete_rmv(){
+	local cur="${COMP_WORDS[COMP_CWORD]}"
+	local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    if [[ ${prev} != ":" ]] ; then
+        compopt -o default
+        return
+    fi
+    __complete_rcd
 }
 
 __complete_rcd(){
@@ -184,6 +252,7 @@ __complete_rcd(){
 }
 
 complete -F __complete_rcd rcd
+complete -F __complete_rmv rmv
 
 if ! [ -e ~/.config/repos.yml ] ; then
     printf "\033[33mrepos_completion.bash : WARNING: No '~/.config/repos.yml' file found.\n" >&2
