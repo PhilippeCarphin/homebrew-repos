@@ -251,6 +251,18 @@ __complete_rcd(){
     fi
 }
 
+_repo-ignore(){
+    local prev=${COMP_WORDS[${COMP_CWORD}-1]}
+    local cur=${COMP_WORDS[${COMP_CWORD}]}
+    if [[ "${prev}" == "--name" ]] ; then
+        COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}) )
+    else
+        COMPREPLY=( $(compgen -W "--name --unignore" -- ${cur}))
+    fi
+}
+
+complete -F _repo-ignore repo-ignore rign
+
 complete -F __complete_rcd rcd
 complete -F __complete_rmv rmv
 
