@@ -65,7 +65,7 @@ __repos_get_current_option(){
 }
 
 __suggest_repos_options(){
-	candidates="-recent -generate-config -j -list-names -list-repos -no-fetch -path -r -get-dir"
+	candidates="-recent -generate-config -j -list-names -list-paths -no-fetch -path -r -get-dir"
 }
 
 __suggest_repos_args_for_option(){
@@ -73,7 +73,7 @@ __suggest_repos_args_for_option(){
 		-generate-config) __suggest_repos_key_generate_config_values ;;
 		-j) __suggest_repos_key_j_values ;;
 		-list-names) __suggest_repos_key_list_names_values ;;
-		-list-repos) __suggest_repos_key_list_repos_values ;;
+		-list-paths) return ;;
 		-no-fetch) __suggest_repos_key_no_fetch_values ;;
 		-path) __suggest_repos_key_path_values ;;
 		-r|-get-dir) __suggest_repos_key_r_values ;;
@@ -90,10 +90,6 @@ __suggest_repos_key_j_values(){
 }
 
 __suggest_repos_key_list_names_values(){
-	candidates=""
-}
-
-__suggest_repos_key_list_repos_values(){
 	candidates=""
 }
 

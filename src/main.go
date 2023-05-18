@@ -31,6 +31,7 @@ type args struct {
 	noFetch        bool
 	repo           string
 	listNames      bool
+	listPaths      bool
 	getDir         string
 	configFile     string
 	recent         bool
@@ -54,7 +55,8 @@ func getArgs() args {
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
 	flag.StringVar(&a.repo, "r", "", "Start new shell with cleared environment in repo")
-	flag.BoolVar(&a.listNames, "list-names", false, "Output list of names on a single line for autocomplete")
+	flag.BoolVar(&a.listNames, "list-names", false, "Output list of names for autocomplete")
+	flag.BoolVar(&a.listPaths, "list-paths", false, "Output list of paths for autocomplete")
 	flag.StringVar(&a.getDir, "get-dir", "", "Get directory of repo on STDOUT")
 	flag.StringVar(&a.configFile, "F", "", "Use a different config file that ~/.config/repos.yml")
 	flag.BoolVar(&a.recent, "recent", false, "Show today and yesterday's commits for all repos")
@@ -425,6 +427,13 @@ func main() {
 	if args.listNames {
 		for _, ri := range database {
 			fmt.Printf("%s\n", ri.Config.Name)
+		}
+		return
+	}
+
+	if args.listPaths {
+		for _, ri := range database {
+			fmt.Printf("%s\n", ri.Config.Path)
 		}
 		return
 	}
