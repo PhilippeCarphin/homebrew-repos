@@ -462,10 +462,6 @@ func main() {
 	for _, ri := range database {
 		wg.Add(1)
 		go func(r *repoInfo, wg *sync.WaitGroup) {
-			if r.Config.Ignore && !args.noignore {
-				wg.Done()
-				return
-			}
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			var err error
@@ -480,7 +476,7 @@ func main() {
 	printRepoInfoHeader()
 	go func(wg *sync.WaitGroup) {
 		for ri := range infoCh {
-			if args.all || ri.State.Dirty || ri.State.RemoteState != RemoteStateNormal || ri.State.UntrackedFiles || ri.State.StagedChanges {
+			if shouldPrint(args, ri) {
 				printRepoInfo(ri)
 			}
 			wg.Done()
@@ -492,6 +488,19 @@ func main() {
      * has been called.
      */
 	wg.Wait()
+}
+
+func shouldPrint(args args, ri *repoInfo) (bool){
+	// fmt.Printf("Repo info : %+v\n", ri);
+	if args.all {
+		return true
+	}
+
+	if ri.State.Dirty || ri.State.UntrackedFiles || ri.State.StagedChanges {
+		return true
+	}
+
+	return !ri.Config.Ignore && ri.State.RemoteState != RemoteStateNormal
 }
 
 
