@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"strconv"
 	"sync"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"bufio"
 	"io"
 	"io/ioutil"
 
@@ -90,10 +92,16 @@ type repoInfo struct {
 
 type repoState struct {
 	Dirty               bool
-	UntrackedFiles      bool
+	UntrackedFiles      int
 	TimeSinceLastCommit time.Duration
 	RemoteState         RemoteState
 	StagedChanges       bool
+	Files               int
+	Insertions          int
+	Deletions           int
+	StagedInsertions    int
+	StagedDeletions     int
+	StagedFiles         int
 }
 
 type repos []repoConfig
@@ -101,6 +109,13 @@ type repos []repoConfig
 func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 	// time.Sleep(time.Millisecond * 500)
 	cmd := exec.Command("git", args...)
+	cmd.Stderr = os.Stderr
+	cmd.Dir = r.Path
+	return cmd
+}
+
+func (r *repoConfig) bashCommand(code string) *exec.Cmd {
+	cmd := exec.Command("bash", "-o", "pipefail", "-c", code)
 	cmd.Stderr = os.Stderr
 	cmd.Dir = r.Path
 	return cmd
@@ -157,14 +172,63 @@ func (r *repoConfig) getRemoteState() (RemoteState, error) {
 	return RemoteStateNormal, nil
 }
 
-func (r *repoConfig) hasUntrackedFiles() (bool, error) {
+func (r *repoConfig) hasUntrackedFiles() (int, error) {
 	cmd := r.gitCommand("ls-files", r.Path, "--others", "--exclude-standard")
 	out, err := cmd.Output()
 	if err != nil {
-		return false, fmt.Errorf("Could not run git command for repo '%s' : %v", r.Path, err)
+		return 0, fmt.Errorf("Could not run git command for repo '%s' : %v", r.Path, err)
 	}
-	return len(out) != 0, nil
+	/*
+	 * Split(s,"\n") on an empty string produces
+	 * a list with a single element which is the empty string
+	 * so we have to check for empty string first otherwise
+	 * repos with zero untracked files would return 1.
+	 */
+	if len(out) == 0 {
+		return 0, nil
+	}
+
+	files := strings.Split(strings.TrimSpace(string(out)), "\n")
+	return len(files), nil
 }
+
+func (r *repoConfig) getInsertionsAndDeletions(staged bool) (int, int, int, error) {
+	args := []string{"diff", "--numstat"}
+	if staged {
+		args = append(args, "--staged")
+	}
+	cmd := r.gitCommand(args...)
+	out, err := cmd.StdoutPipe()
+	cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+	scanner := bufio.NewScanner(out)
+	ins := 0
+	del := 0
+	files := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		words := strings.Split(line, "\t")
+		if len(words) != 3 {
+			return 0, 0, 0, fmt.Errorf("number of words != 3: %s", line)
+		}
+		lineIns, err := strconv.Atoi(words[0])
+		if err != nil {
+			return 0, 0, 0, err
+		}
+		ins += lineIns
+
+		lineDel, err := strconv.Atoi(words[1])
+		if err != nil {
+			return 0, 0, 0, err
+		}
+		del += lineDel
+		files += 1
+	}
+	return files, ins, del, nil
+}
+
 func dumpDatabase(filename string, database []*repoInfo) {
 	repos := make(map[string]repoConfig, len(database))
 	for _, ri := range database {
@@ -238,20 +302,27 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 		return state, err
 	}
 
-	state.Dirty, err = r.hasUnstagedChanges()
+	// state.Dirty, err = r.hasUnstagedChanges()
+	// if err != nil {
+	// 	return state, err
+	// }
+
+	state.Files, state.Insertions, state.Deletions, err = r.getInsertionsAndDeletions(false)
 	if err != nil {
-		return state, err
+		return state, fmt.Errorf("r.getInsertionsAndDeletions() : %v", err)
 	}
+	state.Dirty = (state.Insertions > 0 || state.Deletions > 0)
 
 	state.UntrackedFiles, err = r.hasUntrackedFiles()
 	if err != nil {
 		return state, err
 	}
 
-	state.StagedChanges, err = r.hasStagedChanges()
+	state.StagedFiles, state.StagedInsertions, state.StagedDeletions, err = r.getInsertionsAndDeletions(true)
 	if err != nil {
-		return state, err
+		return state, fmt.Errorf("r.getInsertionsAndDeletions() : %v", err)
 	}
+	state.StagedChanges = (state.StagedInsertions > 0 || state.StagedDeletions > 0)
 
 	if fetch {
 		err := r.fetch()
@@ -342,7 +413,7 @@ func (rs RemoteState) String() string {
 }
 
 func printRepoInfoHeader(){
-	fmt.Printf("REPO                       REMOTE STATE                 STATUS                    TSLC     COMMENT\n")
+	fmt.Printf("REPO                       REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
 }
 func printRepoInfo(ri *repoInfo) {
 
@@ -356,7 +427,19 @@ func printRepoInfo(ri *repoInfo) {
 	case RemoteStateUnknown:
 		fmt.Printf("\033[1;37;41m%11v\033[0m  ", ri.State.RemoteState)
 	}
+if ri.State.StagedChanges {
+		fmt.Printf(" \033[1;33m(%2df, +%-3d,-%-3d)\033[0m", ri.State.StagedFiles,  ri.State.StagedInsertions, ri.State.StagedDeletions)
+	} else {
+		fmt.Printf("                 ")
+	}
 
+	if ri.State.Dirty {
+		fmt.Printf(" \033[0m(%2df, +%-3d,-%-3d)\033[0m", ri.State.Files, ri.State.Insertions, ri.State.Deletions)
+	} else {
+		fmt.Printf("                 ")
+	}
+
+	/*
 	if ri.State.StagedChanges && ri.State.Dirty {
 		fmt.Printf(" \033[1;4;33m%-17s\033[0m ", "Staged & Unstaged")
 	} else if ri.State.StagedChanges {
@@ -366,13 +449,14 @@ func printRepoInfo(ri *repoInfo) {
 	} else {
 		fmt.Printf(" \033[32m%-17s\033[0m ", "Clean")
 	}
+	*/
 
-	if ri.State.UntrackedFiles {
-		fmt.Printf(" \033[33mUntracked Files   \033[0m")
+	if ri.State.UntrackedFiles != 0{
+		fmt.Printf(" \033[1;31m%5d    \033[0m", ri.State.UntrackedFiles)
 	} else {
-		fmt.Printf(" \033[32mNo untracked files\033[0m")
+		fmt.Printf(" \033[32m%5d    \033[0m", 0)
 	}
-	fmt.Printf(" %-4d Hours", int(ri.State.TimeSinceLastCommit.Hours()))
+	fmt.Printf("   %-4d Hours", int(ri.State.TimeSinceLastCommit.Hours()))
 	fmt.Printf(" %s\n", ri.Config.Comment)
 }
 
@@ -496,7 +580,7 @@ func shouldPrint(args args, ri *repoInfo) (bool){
 		return true
 	}
 
-	if ri.State.Dirty || ri.State.UntrackedFiles || ri.State.StagedChanges {
+	if ri.State.Dirty || (ri.State.UntrackedFiles != 0) || ri.State.StagedChanges {
 		return true
 	}
 
