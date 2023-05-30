@@ -309,7 +309,7 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 
 	state.Files, state.Insertions, state.Deletions, err = r.getInsertionsAndDeletions(false)
 	if err != nil {
-		return state, fmt.Errorf("r.getInsertionsAndDeletions() : %v", err)
+		return state, fmt.Errorf("r.getInsertionsAndDeletions(false) for %s : %v", r.Path, err)
 	}
 	state.Dirty = (state.Insertions > 0 || state.Deletions > 0)
 
@@ -320,7 +320,7 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 
 	state.StagedFiles, state.StagedInsertions, state.StagedDeletions, err = r.getInsertionsAndDeletions(true)
 	if err != nil {
-		return state, fmt.Errorf("r.getInsertionsAndDeletions() : %v", err)
+		return state, fmt.Errorf("r.getInsertionsAndDeletions(true) for %s: %v", r.Path, err)
 	}
 	state.StagedChanges = (state.StagedInsertions > 0 || state.StagedDeletions > 0)
 
