@@ -33,22 +33,26 @@ def main():
         print(f"No such repo '{args.name}'")
         return 1
 
-    print(f"Repo '{args.name}' at path '{repo['path']}'")
+    path = repo['path']
+    print(f"Repo '{args.name}' at path '{path}'")
 
-    if not can_erase(repo):
-        return 1
+    try:
+        if not can_erase(repo):
+            return 1
+        resp = input("Are you sure you want to delete this repo? [yes|no] > ")
+        if resp.lower() != 'yes':
+            return 0
+        shutil.rmtree(path)
+        print(f"Repo '{path}' deleted")
+    except FileNotFoundError as e:
+        print(f"Repo not found: {e}")
 
-    resp = input("Are you sure you want to delete this repo? [yes|no] > ")
-    if resp.lower() != 'yes':
-        return 0
-
-    shutil.rmtree(repo['path'])
     del d['repos'][args.name]
 
     with open(repo_file, 'w') as y:
         yaml.dump(d,y)
 
-    print(f"Repo deleted and removed from repo_file '{repo_file}'")
+    print(f"Repo removed from repo_file '{repo_file}'")
 
 def can_erase(repo):
     result = True
