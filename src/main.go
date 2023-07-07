@@ -434,7 +434,7 @@ if ri.State.StagedChanges {
 	}
 
 	if ri.State.Dirty {
-		fmt.Printf(" \033[0m(%2df, +%-3d,-%-3d)\033[0m", ri.State.Files, ri.State.Insertions, ri.State.Deletions)
+		fmt.Printf(" \033[33m(%2df, +%-3d,-%-3d)\033[0m", ri.State.Files, ri.State.Insertions, ri.State.Deletions)
 	} else {
 		fmt.Printf("                 ")
 	}
