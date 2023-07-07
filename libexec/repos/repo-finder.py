@@ -1,6 +1,40 @@
 #!/usr/bin/env python3
 import os
 import yaml
+import argparse
+import pprint
+import sys
+import re
+
+def get_args():
+    p = argparse.ArgumentParser(description="Find git repos recursively and produce YAML code for ~/.config/repos.yml on STDOUT.  Use the --merge option to merge the results into the config file")
+    p.add_argument("dirs", nargs='*', default=[os.getcwd()], help="Directories to search.  Searches PWD if none are specified")
+    p.add_argument("--recursive", action='store_true', help="Search recursively")
+    p.add_argument("--debug", action="store_true", help="Print current search dir to STDERR")
+    p.add_argument("--merge", action='store_true', help="Merge with repo file")
+    p.add_argument("-F", dest='repo_file', metavar="CONFIG_FILE", help="Alternate repo-file, defaults to ~/.config/repos.yml", default=os.path.expanduser("~/.config/repos.yml"))
+    p.add_argument("--exclude", help="Regular expression to exclude")
+    p.add_argument("--include", help="Regular expression to include")
+    p.add_argument("--cleanup", action='store_true', help="Remove repos that don't exist anymore.  Only valid when using the --merge option")
+
+    args = p.parse_args()
+    if args.include and args.exclude:
+        print("Can only have one of --include or --exclude")
+        p.parse_args(['-h'])
+    if args.exclude:
+        if '/' in args.exclude:
+            print("--exclude pattern contains a '/' but pattern is used to match on path components")
+        args.exclude = re.compile(args.exclude)
+    if args.include:
+        if '/' in args.include:
+            print("--include pattern contains a '/' but pattern is used to match on path components")
+        args.include = re.compile(args.include)
+
+    for d in args.dirs:
+        if not os.path.isdir(d):
+            print(f"Warning: directory '{d}' does not exist or is not a directory")
+
+    return args
 
 def is_git_repo(path):
     try:
@@ -19,59 +53,67 @@ def is_git_repo(path):
 
     return False
 
-def find_git_repos(directory):
+def find_git_repos(directory, recurse, args):
+    if args.debug:
+        print(f"Doing directory {directory}", file=sys.stderr)
 
     if is_git_repo(directory):
-        yield directory
+        name = os.path.basename(directory)
+        yield (name, {'path': directory})
         return
 
     if not os.path.isdir(directory):
         return
 
+    if not recurse:
+        return
     try:
         contents = os.listdir(directory)
     except PermissionError:
         return
 
-    new = filter(lambda c: not c.startswith("."), contents)
-    subdirs = list(filter( lambda d:os.path.isdir(os.path.join(directory, d)), new))
-    for d in subdirs:
-        yield from find_git_repos(os.path.join(directory, d))
+    dirs = filter(lambda c: not c.startswith("."), contents)
+    dirs = filter( lambda d:os.path.isdir(os.path.join(directory, d)), dirs)
+    if args.exclude:
+        dirs = filter(lambda d: not args.exclude.search(d), dirs)
+    if args.include:
+        dirs = filter(lambda d: args.include.search(d), dirs)
+    for d in dirs:
+        yield from find_git_repos(os.path.join(directory, d), args.recursive, args=args)
 
-home_dirs = [
-    "go/src/gitlab.com/philippecarphin",
-    "go/src/github.com/philippecarphin",
-    "go/src/gitlab.science.gc.ca",
-    "repos",
-    "Repos",
-    "fs2/Cellar/Repositories",
-    "Repositories",
-    "workspace",
-    "Documents/GitHub",
+def soft_update(original, new):
+    """ Update original with keys that are in new but not already in original """
 
-    "Projects",
-    "code"
-    "projects",
-    "git",
-    "GIT",
-    "WORKSPACE",
-    "work",
-]
-repos = []
-for d in home_dirs:
-    new_repos = list(find_git_repos(os.environ["PWD"] + "/" + d))
-    repos += new_repos
-# repos = list(find_git_repos(os.getcwd()+"/workspace"))
-# repos += list(find_git_repos(os.getcwd()+"/Documents/GitHub"))
-# repos += list(find_git_repos(os.getcwd()+"/go/src/gitlab.com/philippecarphin"))
-# repos += list(find_git_repos(os.getcwd()+"/go/src/github.com/philippecarphin"))
-# repos += list(find_git_repos(os.getcwd()+"/go/src/gitlab.science.gc.ca"))
-# repos += list(find_git_repos(os.getcwd()+"/go/src/gitlab.science.gc.ca"))
-repos_file = {
-        "repos": {os.path.basename(r):{"path":r} for r in repos}
-}
+def main():
+    args = get_args()
+    repos = {}
+    try:
+        for d in args.dirs:
+            if not os.path.isabs(d):
+                d = os.path.join(os.getcwd(), d)
+            repos.update(find_git_repos(directory=d, recurse=True, args=args))
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt, results so far:")
+        yaml.dump({'repos': repos})
+        return 130
+    if args.merge:
+        if not os.path.exists(args.repo_file):
+            open(args.repo_file, 'w').write('repos: {}\n')
+        with open(args.repo_file, 'r') as f:
+            base_rf = yaml.load(f)
+            for k in repos.keys():
+                if k not in base_rf['repos']:
+                    print(f"Adding repo '{k}' at path '{repos[k]['path']}'", file=sys.stderr)
+                    base_rf['repos'][k] = repos[k]
+        if args.cleanup:
+            for k in list(base_rf['repos'].keys()):
+                v = base_rf['repos'][k]
+                if not os.path.isdir(v['path']):
+                    print(f"Deleting key {k}: path {v['path']} does not exist", file=sys.stderr)
+                    del base_rf['repos'][k]
+        with open(args.repo_file, 'w') as f:
+            yaml.dump(base_rf, f)
+    else:
+        print(yaml.dump({"repos": repos }))
 
-
-print(yaml.dump(repos_file))
-
-
+sys.exit(main())
