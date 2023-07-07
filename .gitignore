@@ -2,3 +2,4 @@ localinstall
 build
 repos_*_all
 *.ssm
+__pycache__
