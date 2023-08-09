@@ -4,13 +4,11 @@ stages:
   - build
   - release
 
-before_script:
-  - apt-get update --yes
-  - apt-get install --yes python3 cmake pandoc
-
 build:
   stage: build
   script:
+    - apt-get update --yes
+    - apt-get install --yes python3 cmake pandoc
     - export PATH=$HOME/.local/bin:$PATH
     - go version
     - mkdir build
