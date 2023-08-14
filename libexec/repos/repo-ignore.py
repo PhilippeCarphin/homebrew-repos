@@ -35,6 +35,7 @@ def main():
         if 'ignore' in repo and repo['ignore']:
             print(f"Repo is already ignored")
         else:
+            print(f"Adding 'ignore: true' to repo '{args.name}'")
             repo['ignore'] = True
 
 
