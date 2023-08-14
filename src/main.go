@@ -93,6 +93,7 @@ type repoInfo struct {
 type repoState struct {
 	Dirty               bool
 	UntrackedFiles      int
+	UntrackedDirs       int
 	TimeSinceLastCommit time.Duration
 	RemoteState         RemoteState
 	StagedChanges       bool
@@ -172,11 +173,11 @@ func (r *repoConfig) getRemoteState() (RemoteState, error) {
 	return RemoteStateNormal, nil
 }
 
-func (r *repoConfig) hasUntrackedFiles() (int, error) {
-	cmd := r.gitCommand("ls-files", r.Path, "--others", "--exclude-standard")
+func (r *repoConfig) hasUntrackedFiles() (int, int, error) {
+	cmd := r.gitCommand("ls-files", r.Path, "--others", "--exclude-standard", "--directory", "--no-empty-directory")
 	out, err := cmd.Output()
 	if err != nil {
-		return 0, fmt.Errorf("Could not run git command for repo '%s' : %v", r.Path, err)
+		return 0, 0, fmt.Errorf("Could not run git command for repo '%s' : %v", r.Path, err)
 	}
 	/*
 	 * Split(s,"\n") on an empty string produces
@@ -185,11 +186,20 @@ func (r *repoConfig) hasUntrackedFiles() (int, error) {
 	 * repos with zero untracked files would return 1.
 	 */
 	if len(out) == 0 {
-		return 0, nil
+		return 0, 0, nil
 	}
 
 	files := strings.Split(strings.TrimSpace(string(out)), "\n")
-	return len(files), nil
+	var nbDirs int = 0
+	var nbFiles int = 0
+	for _, f := range files {
+		if strings.HasSuffix(f, "/") {
+			nbDirs += 1
+		} else {
+			nbFiles += 1
+		}
+	}
+	return nbDirs, nbFiles, nil
 }
 
 func (r *repoConfig) getInsertionsAndDeletions(staged bool) (int, int, int, error) {
@@ -313,7 +323,7 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 	}
 	state.Dirty = (state.Insertions > 0 || state.Deletions > 0)
 
-	state.UntrackedFiles, err = r.hasUntrackedFiles()
+	state.UntrackedDirs, state.UntrackedFiles, err = r.hasUntrackedFiles()
 	if err != nil {
 		return state, err
 	}
@@ -427,7 +437,7 @@ func printRepoInfo(ri *repoInfo) {
 	case RemoteStateUnknown:
 		fmt.Printf("\033[1;37;41m%11v\033[0m  ", ri.State.RemoteState)
 	}
-if ri.State.StagedChanges {
+	if ri.State.StagedChanges {
 		fmt.Printf(" \033[1;33m(%2df, +%-3d,-%-3d)\033[0m", ri.State.StagedFiles,  ri.State.StagedInsertions, ri.State.StagedDeletions)
 	} else {
 		fmt.Printf("                 ")
@@ -451,10 +461,10 @@ if ri.State.StagedChanges {
 	}
 	*/
 
-	if ri.State.UntrackedFiles != 0{
-		fmt.Printf(" \033[1;31m%5d    \033[0m", ri.State.UntrackedFiles)
+	if ri.State.UntrackedFiles != 0 || ri.State.UntrackedDirs != 0 {
+		fmt.Printf(" \033[1;31m%5dd,%df    \033[0m", ri.State.UntrackedDirs,  ri.State.UntrackedFiles)
 	} else {
-		fmt.Printf(" \033[32m%5d    \033[0m", 0)
+		fmt.Printf(" \033[32m%5d        \033[0m", 0)
 	}
 	fmt.Printf("   %-4d Hours", int(ri.State.TimeSinceLastCommit.Hours()))
 	fmt.Printf(" %s\n", ri.Config.Comment)
