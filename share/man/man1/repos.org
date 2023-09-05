@@ -1,6 +1,6 @@
 #+TITLE: Repos
 * NAME
-repos is a command line tool keep track of local git repos.
+repos - a command line tool keep track of local git repos.
 * SYNOPSIS
 
 #+begin_src shell

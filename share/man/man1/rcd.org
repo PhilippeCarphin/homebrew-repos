@@ -2,8 +2,7 @@
 
 * NAME
 
-rcd is a shell function that changes directory to the path of the named repo
-from ~$HOME/.config/repos.yml~.
+rcd - cd to to the path of a repo by its name in repos config file.
 
 * SYNOPSIS
 

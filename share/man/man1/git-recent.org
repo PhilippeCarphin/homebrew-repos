@@ -2,7 +2,7 @@
 
 * NAME
 
-~git-recent~ is a tool to show recent git commits in a repo.
+~git-recent~ - a tool to show recent git commits in a repo.
 
 * SYNOPSIS
 
@@ -30,7 +30,6 @@ repos, repo-finder, rcd
 
 * AUTHOR
 Philippe Carphin
-
 
 * COPYRIGHT
 Philippe Carphin

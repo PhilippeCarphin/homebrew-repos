@@ -2,8 +2,7 @@
 
 * NAME
 
-repo-finder finds git repos recursively by searching from the present working
-directory.
+repo-finder - find git repositories and generate output for repos config file
 
 
 * SYNOPSIS
