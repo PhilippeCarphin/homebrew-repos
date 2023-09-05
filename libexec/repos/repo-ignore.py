@@ -21,7 +21,7 @@ def main():
         args.name = os.path.basename(os.getcwd())
 
     with open(repo_file) as f:
-        database = yaml.load(f)
+        database = yaml.safe_load(f)
 
     if args.name not in database['repos'] :
         print(f"No repo with name '{args.name}' in repo file '{repo_file}'")

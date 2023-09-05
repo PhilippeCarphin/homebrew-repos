@@ -100,7 +100,7 @@ def main():
         if not os.path.exists(args.repo_file):
             open(args.repo_file, 'w').write('repos: {}\n')
         with open(args.repo_file, 'r') as f:
-            base_rf = yaml.load(f)
+            base_rf = yaml.safe_load(f)
             for k in repos.keys():
                 if k not in base_rf['repos']:
                     print(f"Adding repo '{k}' at path '{repos[k]['path']}'", file=sys.stderr)
