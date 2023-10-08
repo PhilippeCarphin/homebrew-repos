@@ -25,17 +25,36 @@ def get_args():
     return args
 
 def main(args):
+    #
+    # Load repofile
+    #
     repo_file = args.F if args.F else os.path.expanduser("~/.config/repos.yml")
     with open(repo_file) as y:
-        d = yaml.safe_load(y)
+        repo_dict = yaml.safe_load(y)
+
+    #
+    # Check that it is a git repo by checking for a .git directory
+    #
     if not os.path.isdir(os.path.join(args.repo, '.git')):
         raise RepoAdderError(f"It seems repo '{args.repo}' is not a git repository, skipping ...")
-    if args.name in d['repos']:
+
+    #
+    # Check if the repo is already there
+    #
+    if args.name in repo_dict['repos']:
         raise RepoAdderError(f"Repo '{args.repo}' is already in '{repo_file}' under name '{args.name}' skipping ...")
-    d['repos'][args.name] = {"path": args.repo}
+
+    #
+    # Add to the repo database
+    #
+    repo_dict['repos'][args.name] = {"path": args.repo}
     print(f"{sys.argv[0]}: \033[1;35mINFO\033[0m: Added '{args.repo}' to '{repo_file}' under name '{args.name}'")
+
+    #
+    # Save back to file
+    #
     with open(repo_file, 'w') as y:
-        yaml.dump(d,y)
+        yaml.dump(repo_dict,y)
 
 if __name__ == "__main__":
     try:

@@ -58,9 +58,3 @@ install(
     DESTINATION
         etc/zsh_completion.d
 )
-
-# --no-track prevents the creation of .json files with package info
-# --force overwrites files if they are already there
-install(CODE
-    "execute_process(COMMAND cargo install --path ${CMAKE_SOURCE_DIR}/rust/repos-add --root ${CMAKE_INSTALL_PREFIX} --no-track --force)"
-)
