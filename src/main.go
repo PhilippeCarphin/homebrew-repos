@@ -487,14 +487,14 @@ func main() {
 
 	/*
 	 * Do git style subcommand thing where 'repos add' execs a file
-	 * repo-add from PATH
+	 * repos-add from PATH
 	 */
 	if len(args.posargs) > 0 {
 		var subcommand string
 		if args.posargs[0] == "help" {
-			subcommand = fmt.Sprintf("repo-%s", args.posargs[1])
+			subcommand = fmt.Sprintf("repos-%s", args.posargs[1])
 		} else {
-			subcommand = fmt.Sprintf("repo-%s", args.posargs[0])
+			subcommand = fmt.Sprintf("repos-%s", args.posargs[0])
 		}
 		path, err := exec.LookPath(subcommand)
 		if err != nil {
