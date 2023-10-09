@@ -1,0 +1,41 @@
+#+TITLE: repos-add
+* NAME
+repos-ignore - Set the ignore flag of a repo
+
+* SYNOPSIS
+
+#+begin_src shell
+repos-ignore [-F CONFIG_FILE] [--name NAME] [PATH]
+#+end_src
+
+* DESCRIPTION
+
+This excludes the repo from showing up in the global report if it is ahead or
+behind its remote.
+
+The repo will still appear if there are staged or unstaged changes or untracked
+files.
+
+This is useful for repositories that are only for consultation purposes and get
+frequent updates.
+
+Ignored repos can still be shown in the globla report if by calling repos
+with the =--all= flag.
+
+* EXAMPLE
+
+If the =git= repository is cloned to look at its source code, it may not be
+desirable to show it in the global report just because some upstream commits
+have appeared.
+
+#+begin_src shell
+git clone https://github.com/git/git
+cd git
+repos add
+repos ignore
+#+end_src
+
+Once in a while, =repos -all= can be run to see ignored repos and update them.
+
+* AUTHOR
+Philippe Carphin

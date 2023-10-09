@@ -1,0 +1,32 @@
+#+TITLE: repos-add
+* NAME
+repos-del - delete a repo from disc and remove it from the config file
+
+* SYNOPSIS
+
+#+begin_src shell
+repos-add [-F CONFIG_FILE] [--name NAME] [PATH]
+#+end_src
+
+* DESCRIPTION
+
+This tool deletes a repository from disc and removes its entry in the config
+file at the same time.
+
+It is safer than =rm -rf= (the normal way to delete a repo) because it will
+abort under certain conditions:
+
+- The repo is in detached head state
+- The current branch does not track a remote branch
+- There are untracked files
+- Threre are staged or unstaged changes
+- The current branch is behind its remote counterpart
+
+These conditions are *NOT* a garantee that no work will be lost.  If did work
+on a branch and did not push it, then checked out another branch, the tool
+will not detect it.
+
+*ONLY USE THIS IF YOU WOULD BE READY TO =rm -rf= THE REPO*
+
+* AUTHOR
+Philippe Carphin

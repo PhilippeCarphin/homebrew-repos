@@ -1,0 +1,28 @@
+#+TITLE: repos-add
+* NAME
+repos-add - add a repo to the config file
+
+* SYNOPSIS
+
+#+begin_src shell
+repos-add [-F CONFIG_FILE] [--name NAME] [PATH]
+#+end_src
+
+* DESCRIPTION
+
+Add a git repository to the repos config file.
+
+If no PATH is specified, the repo PWD is used.
+
+If no NAME is specified, the basename of PWD is used.
+
+* EXAMPLE
+
+#+begin_src shell
+git clone https://github.com/philippecarphin/repos
+cd repos
+repos add
+#+end_src
+
+* AUTHOR
+Philippe Carphin

@@ -9,27 +9,39 @@ repos -generate-config >> ~/.config/repos.yml
 repos -get-dir REPO
 #+end_src
 
-Without arguments report with info for git repos listed in ~$HOME/.config/repos.yml~.
-See section CONFIGURATION for details on this ~repos.yml~ file.
-
-#+begin_src shell
-rcd NAME
-#+end_src
-
-~cd~ to the path of a repo by giving its name with autocompletion of repo names.
-
-See OPTIONS section for more options for ~repos~.
-
 * DESCRIPTION
 Without any arguments, the ~repos~ looks in ~$HOME/.config/repos.yml~ and prints
 a report of on various information about the git repo:
-- Remote state: up-to-date, behind, ahead, diverged (relative to the currently
-  checked out branch in the repo).
-- Status: Presence of staged or unstaged chages, presence of untracked files.
+
+#+begin_src
+REPO                       REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT
+my-first-extension              unknown                   ( 3f, +25 ,-2  )     0           14360 Hours
+stow-completion                  behind                                        0           4134 Hours
+orgmanpages                  Up to Date  ( 3f, +162,-0  ) ( 1f, +16 ,-1  )     1d,4f       15800 Hours
+utils                            behind                   ( 1f, +16 ,-1  )     0           626  Hours
+#+end_src
+
+- Remote state of the currently checked out branch: up-to-date, behind, ahead, diverged
+- Staged and unstaged changes: (#files, #added-lines, #removed-lines)
+- Untracked files: (#directories, #files)
 - Time since last commit: The time in hours since the last commit was made on
-  the currently checked out branch.  This number does not indicate anything in and
-  of itself.
-  
+  the currently checked out branch.
+
+By default, the repositories whose that are up to date with the remote, have no
+staged or unstaged changes, and have no untracked files or directories are
+not shown.
+
+The report is colored according to attract attention to the repos that likely
+need it most:
+- Untracked files in bold red: Untracked files are never good, they should either
+  be in the gitignore or not be there.
+- Staged changes in bold yellow: if a repo has staged changes, it is likely the
+  user was in the middle of making a commit and should go complete it.
+- Unstaged changes in yellow: It's normal to have unstaged changes if you are
+  working on something.
+- Remote state in bold purple: It depends, but it's also easy to solve so you
+  might as well push or merge.
+
 See section OPTIONS for more available options for ~repos~.
 
 * CONFIGURATION
@@ -70,18 +82,21 @@ file ~STDOUT~.
 
 ** ~-no-fetch~
 
-Skips the fetching step.
+Skips the fetching step.  This is useful if you have separate repos config file
+that has repos of other people on a shared filesystem for which running git fetch
+would cause permission denied errors.
 
 ** ~-j NJOBS~
 
 Use up to ~NJOBS~ concurrent processes to assess the status of the git
-repositories.
+repositories.  Because =git fetch=, which is mostly IO, is run for each
+repo, an important speed increase is gained by having a high number of jobs.
 
 ** ~-recent~
 
 Run ~git recent~ in all repositories.  Showing commits made *today* and
 *yesterday*.  This is very useful if you work on many repos and want to get a
-condensed report of recent activity.
+condensed report of recent activity.  See =man git-recent= for more info.
 
 ** ~-days~
 
@@ -89,6 +104,7 @@ Only useful with the ~-recent~ flag.  Go more than one day before yesterday in
 the commit history.
 
 * BUGS
+
 The accompanying script =repos_completion.bash= defines autocomplete and the
 ~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
 ~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
