@@ -10,9 +10,13 @@ class RepoAdderError(Exception):
 
 def get_args():
     p = argparse.ArgumentParser(description="Add a repo to the repos.yml config file")
+
     p.add_argument("-F", help="Specify alternate file to ~/.config/repos.yml")
     p.add_argument("repo", help="Specify the repository, defaults to $PWD", nargs='?')
     p.add_argument("--name", help="Specify name for repo in config file")
+
+    if "FROM_REPOS" in os.environ:
+        print(f"DEBUG: Called by repos executable by doing 'repos add'")
 
     args = p.parse_args()
 

@@ -10,6 +10,7 @@ import (
 
 	"os"
 	"os/exec"
+	"syscall"
 	"path/filepath"
 
 	"bufio"
@@ -40,6 +41,8 @@ type args struct {
 	days           int
 	all            bool
 	noignore       bool
+	subcommand     string
+	posargs        []string
 }
 
 
@@ -52,6 +55,7 @@ func getArgs() args {
 		flag.PrintDefaults()
 	}
 	a.command = flag.Arg(0)
+
 	flag.StringVar(&a.path, "path", "", "Specify a single repo to give info for")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.config/repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
@@ -65,7 +69,9 @@ func getArgs() args {
 	flag.IntVar(&a.days, "days", 1, "Go back more than one day before yesterday when using option -recent")
 	flag.BoolVar(&a.all, "all", false, "Print all repos instead of just the onse with modifications")
 	flag.BoolVar(&a.noignore, "noignore", false, "Disregard the ignore flag on repos")
+
 	flag.Parse()
+	a.posargs = flag.Args()
 
 	return a
 }
@@ -474,8 +480,45 @@ func main() {
 
 	args := getArgs()
 	if args.generateConfig {
+		fmt.Printf("main: args.generateConfig");
 		generateConfig("")
 		return
+	}
+
+	/*
+	 * Do git style subcommand thing where 'repos add' execs a file
+	 * repo-add from PATH
+	 */
+	if len(args.posargs) > 0 {
+		var subcommand string
+		if args.posargs[0] == "help" {
+			subcommand = fmt.Sprintf("repo-%s", args.posargs[1])
+		} else {
+			subcommand = fmt.Sprintf("repo-%s", args.posargs[0])
+		}
+		path, err := exec.LookPath(subcommand)
+		if err != nil {
+			fmt.Printf("No such subcommand '%s'\n", args.posargs[0])
+			syscall.Exit(1)
+		}
+
+		if args.posargs[0] == "help" {
+			cmd := []string{"man", subcommand}
+			err := syscall.Exec("/usr/bin/man", cmd, os.Environ())
+			if err != nil {
+				fmt.Printf("No manpage for subcommand %s\n", args.posargs[1])
+				syscall.Exit(1)
+			}
+		}
+		if args.configFile != "" {
+			args.posargs = append(args.posargs, "-F", "args.configFile")
+		}
+
+		err = syscall.Exec(path, args.posargs, append(os.Environ(), "FROM_REPOS=YES"))
+		if err != nil {
+			fmt.Printf("error with subcommand: %v\n", err)
+			syscall.Exit(1)
+		}
 	}
 
 	if args.path != "" {
