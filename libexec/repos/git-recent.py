@@ -27,7 +27,7 @@ class Repo:
         self.repo_dir = repo_dir
 
     def branches(self):
-        result = subprocess.run(f"cd {self.repo_dir} && git branch | tr '*' ' '",
+        result = subprocess.run(f"cd {self.repo_dir} && git branch | tr -d '*+ '",
                 shell=True, universal_newlines=True, check=True, stdout=subprocess.PIPE)
         for l in result.stdout.splitlines():
             if 'HEAD' in l:
