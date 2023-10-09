@@ -19,7 +19,7 @@ def main():
         else:
             repo.print_recent_commits(days=int(args.days))
     except subprocess.CalledProcessError as e:
-        print(e.stderr.strip())
+        print(e.cmd, e.args, e.stderr.strip())
         return 1
 
 class Repo:
