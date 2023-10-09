@@ -6,8 +6,13 @@ import os
 import subprocess
 import shutil
 
+DESCRIPTION = """
+Delete a repo from disc and from the repos config file.  NOTE: Although this
+tool performs some checks to prevent work from being lost, only use it if you
+would be willing to rm -rf the repo."""
+
 def get_args():
-    p = argparse.ArgumentParser(description="Add a repo to the repos.yml config file")
+    p = argparse.ArgumentParser(description=DESCRIPTION)
     p.add_argument("-F", help="Specify alternate file to ~/.config/repos.yml")
     p.add_argument("repo", help="Specify the repository, defaults to $PWD", nargs='?')
     p.add_argument("--name", help="Specify name for repo in config file")
