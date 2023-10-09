@@ -4,41 +4,39 @@
 
 repo-finder - find git repositories and generate output for repos config file
 
-
 * SYNOPSIS
 
-#+begin_src shell
-repo-finder > ~/.config/repos.yml
+repos-finder [--recursive] [--merge] [-F CONFIG_FILE] [DIRS...]
+
+* DESCRIPTION
+
+Tool to help generate the config file for the repos tool.
+
+The tool searches for git repos inside DIRS or in PWD if no DIRS are specified.
+
+The tool's default behavior is to output text that can be put in the user's
+config file however if the =--merge= option is specified, the tool will automatically
+merge the found repos with the ones in the user's config file.
+
+With the =--cleanup= option, the tool will also check if the path of each repo
+exists and if it does not, that repo will be removed from the config file.
+
+The =--exclude= and =--include= options can be used to exclude certain patterns
+from search.  This option was added in case a cycle of links is encountered.  On
+the author's Mac, =~/Library/Application Support/Steam= has a cycle of links.
+
+* EXAMPLES
+
+If all your repos are kept directly side 3 directories, the following command will refresh
+the repos config file.
+#+begin_src
+repos-finder --merge --cleanup DIR1 DIR2 DIR3
 #+end_src
 
-Recursively search the following subdirectories of ~PWD~ for git repositories
-
-- go/src/gitlab.science.gc.ca
-- Repositories
-- repos
-- Repos
-- workspace
-- Documents/GitHub
-- Projects
-- code
-- projects
-- git
-- Git
-- GIT
-- WORKSPACE
-- work
-  
-I have plans to make =repos -generate-config= take a list of directories as a
-parameter and avoid the need to do this.
-
-
-For now, one can get a more custom solution by crafting their own tool using the main
-executable ~repos~ and the non-recursive =-generate-config= command.
-
-#+begin_src shell
-for d in $(cat dirlist.txt) ; do
-    repos -generate-config
-done >> ~/.config/repos.yml
+If all your repos are inside one directory, then this command will find all of
+them.
+#+begin_src
+repos-finder --merge --cleanup --recursive DIR1
 #+end_src
 
 * AUTHORS
