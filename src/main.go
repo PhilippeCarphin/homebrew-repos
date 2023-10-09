@@ -548,11 +548,11 @@ func main() {
 
 	database, err := readDatabase(databaseFile)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "Error opening config file '%s': %+v\n", databaseFile, err)
 		os.Exit(1)
 	}
 	if len(database) == 0 {
-		fmt.Fprintf(os.Stderr, "\033[33mWARNING\033[0m No repos listed in $HOME/.config/repos.yml\n")
+		fmt.Fprintf(os.Stderr, "\033[33mWARNING\033[0m No repos listed in '%s'\n", databaseFile)
 	}
 
 
