@@ -58,11 +58,14 @@ class Repo:
 
         The format is "{Commit Hash} {Unix timestamp} {Commit message}"
         """
-        cmd = 'cd {} && git rev-list {} --after="{}" --before="{}" --pretty=format:"%h %at %ae %s"'.format(
-                self.repo_dir, branch, begin.strftime("%Y-%m-%d %H:%M"), end.strftime("%Y-%m-%d %H:%M"))
+        cmd = [
+            'git', 'rev-list', branch,
+            f'--after={begin.strftime("%Y-%m-%d %H:%M")}',
+            f'--before={end.strftime("%Y-%m-%d %H:%M")}',
+            '--pretty=format:%h %at %ae %s'
+        ]
         result = subprocess.run(
             cmd,
-            shell=True,
             universal_newlines=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
