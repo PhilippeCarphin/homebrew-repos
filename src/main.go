@@ -262,6 +262,9 @@ func dumpDatabase(filename string, database []*repoInfo) {
 
 func showRecentCommits(database []*repoInfo, args args) error {
 	for _, ri := range database {
+		if !args.noignore && ri.Config.Ignore {
+			continue
+		}
 		cmd := ri.Config.gitCommand("recent", "--all", "-d", fmt.Sprintf("%d", (args.days)))
 		out, err := cmd.Output()
 		if err != nil {
