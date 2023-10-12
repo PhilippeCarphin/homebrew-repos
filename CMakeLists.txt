@@ -38,6 +38,7 @@ install(
     DESTINATION libexec
     USE_SOURCE_PERMISSIONS
     PATTERN __pycache__ EXCLUDE
+    PATTERN *~ EXCLUDE
 )
 
 install(
