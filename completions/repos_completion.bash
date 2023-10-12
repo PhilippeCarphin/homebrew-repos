@@ -20,7 +20,7 @@ __complete_repos() {
 
 	# We use the current word to filter out suggestions
 	local cur="${COMP_WORDS[COMP_CWORD]}"
-     local candidates=""
+    local candidates=""
      __suggest_repos_candidates
 
 	# Compgen: takes the list of candidates and selects those matching ${cur}.
@@ -38,7 +38,7 @@ __suggest_repos_candidates(){
 	fi
 
 	option=$(__repos_get_current_option)
-	if [[ "$option" != "" ]] ; then
+	if __repos_option_has_arg "$option" ; then
 		__suggest_repos_args_for_option ${option}
 	else
 		# No positional arguments yet
@@ -65,7 +65,14 @@ __repos_get_current_option(){
 }
 
 __suggest_repos_options(){
-	candidates="-recent -generate-config -j -list-names -list-paths -no-fetch -path -r -get-dir"
+	candidates="-F -all -days -generate-config -get-dir -j -list-names -list-paths -no-fetch -noignore -path -r -recent"
+}
+__repos_option_has_arg(){
+    local option=$1
+    case "$1" in
+        -get-dir|-F|-j|-days|-path) return 0 ;; # BASH True
+        *) return 1 ;; # BASH False
+    esac
 }
 
 __suggest_repos_args_for_option(){
@@ -78,6 +85,7 @@ __suggest_repos_args_for_option(){
 		-path) __suggest_repos_key_path_values ;;
 		-r|-get-dir) __suggest_repos_key_r_values ;;
         -recent) return ;;
+        *) return ;;
 	esac
 }
 
