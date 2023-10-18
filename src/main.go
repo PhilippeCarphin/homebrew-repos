@@ -26,6 +26,9 @@ type RepoFile struct {
 	Config config
 }
 type args struct {
+	branch         bool
+	csv            bool
+	csvSep         string
 	command        string
 	path           string
 	name           string
@@ -42,6 +45,8 @@ type args struct {
 	all            bool
 	noignore       bool
 	subcommand     string
+	behind         bool
+	foreach        string
 	posargs        []string
 }
 
@@ -56,13 +61,18 @@ func getArgs() args {
 	}
 	a.command = flag.Arg(0)
 
+	flag.StringVar(&a.foreach, "foreach", "", "Do a command on every repo")
 	flag.StringVar(&a.path, "path", "", "Specify a single repo to give info for")
 	flag.BoolVar(&a.generateConfig, "generate-config", false, "Look for git repos in PWD and generate ~/.config/repos.yml file content on STDOUT.")
 	flag.IntVar(&a.njobs, "j", 1, "Number of concurrent repos to do")
+	flag.BoolVar(&a.branch, "branch", false, "Print the current branch")
+	flag.BoolVar(&a.csv, "csv", false, "Output in CSV format in certain contexts")
+	flag.StringVar(&a.csvSep, "csv-sep", ",", "Separator to use for CSV")
 	flag.BoolVar(&a.noFetch, "no-fetch", false, "Disable auto-fetching")
 	flag.StringVar(&a.repo, "r", "", "Start new shell with cleared environment in repo")
 	flag.BoolVar(&a.listNames, "list-names", false, "Output list of names for autocomplete")
 	flag.BoolVar(&a.listPaths, "list-paths", false, "Output list of paths for autocomplete")
+	flag.BoolVar(&a.behind, "behind", false, "List paths only shows path that are behind")
 	flag.StringVar(&a.getDir, "get-dir", "", "Get directory of repo on STDOUT")
 	flag.StringVar(&a.configFile, "F", "", "Use a different config file that ~/.config/repos.yml")
 	flag.BoolVar(&a.recent, "recent", false, "Show today and yesterday's commits for all repos")
@@ -109,14 +119,23 @@ type repoState struct {
 	StagedInsertions    int
 	StagedDeletions     int
 	StagedFiles         int
+	CurrentBranch       string
 }
 
 type repos []repoConfig
 
 func (r repoConfig) gitCommand(args ...string) *exec.Cmd {
 	// time.Sleep(time.Millisecond * 500)
-	cmd := exec.Command("git", args...)
+	args2 := []string{"-c", "color.ui=always"}
+	args2 = append(args2, args...)
+	cmd := exec.Command("git", args2...)
 	cmd.Stderr = os.Stderr
+	cmd.Dir = r.Path
+	return cmd
+}
+
+func (r repoConfig) command(name string, args ...string) *exec.Cmd {
+	cmd := exec.Command(name, args...)
 	cmd.Dir = r.Path
 	return cmd
 }
@@ -311,7 +330,7 @@ func (r repoConfig) fetch() error {
 	return nil
 }
 
-func (r repoConfig) getState(fetch bool) (repoState, error) {
+func (r repoConfig) getState(a args) (repoState, error) {
 
 	state := repoState{}
 	var err error
@@ -337,13 +356,20 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 		return state, err
 	}
 
+	if a.branch {
+		state.CurrentBranch, err = r.getCurrentBranch()
+		if err != nil {
+			return state, err
+		}
+	}
+
 	state.StagedFiles, state.StagedInsertions, state.StagedDeletions, err = r.getInsertionsAndDeletions(true)
 	if err != nil {
 		return state, fmt.Errorf("r.getInsertionsAndDeletions(true) for %s: %v", r.Path, err)
 	}
 	state.StagedChanges = (state.StagedInsertions > 0 || state.StagedDeletions > 0)
 
-	if fetch {
+	if !a.noFetch {
 		err := r.fetch()
 		if err != nil {
 			state.RemoteState = RemoteStateUnknown
@@ -358,6 +384,22 @@ func (r repoConfig) getState(fetch bool) (repoState, error) {
 	state.RemoteState = remoteState
 
 	return state, nil
+}
+
+func (r *repoConfig) getCurrentBranch() (string, error){
+	cmd := r.gitCommand("symbolic-ref", "--short", "HEAD")
+	cmd.Stderr = nil
+	out, err := cmd.Output()
+	if err == nil {
+		return strings.Trim(string(out), "\n"), nil
+	}
+
+	cmd = r.gitCommand("rev-parse", "--short", "HEAD")
+	out, err = cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("((%s))", strings.Trim(string(out), "\n")), nil
 }
 
 func generateConfig(filename string) {
@@ -431,13 +473,20 @@ func (rs RemoteState) String() string {
 	return "UNKNOWN"
 }
 
-func printRepoInfoHeader(){
-	fmt.Printf("REPO                       REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
+func printRepoInfoHeader(a args){
+	if a.branch {
+		fmt.Printf("REPO                         BRANCH               REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
+	} else {
+		fmt.Printf("REPO                       REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
+	}
 }
-func printRepoInfo(ri *repoInfo) {
+func printRepoInfo(ri *repoInfo, a args) {
 
 	fmt.Printf("\033[;1m%-28s\033[0m", ri.Config.Name)
 
+	if a.branch {
+		fmt.Printf(" %-22s", ri.State.CurrentBranch)
+	}
 	switch ri.State.RemoteState {
 	case RemoteStateNormal:
 		fmt.Printf("%11s ", "Up to Date")
@@ -476,7 +525,8 @@ func printRepoInfo(ri *repoInfo) {
 		fmt.Printf(" \033[32m%5d        \033[0m", 0)
 	}
 	fmt.Printf("   %-4d Hours", int(ri.State.TimeSinceLastCommit.Hours()))
-	fmt.Printf(" %s\n", ri.Config.Comment)
+	fmt.Printf(" %s", ri.Config.Comment)
+	fmt.Printf("\n")
 }
 
 func main() {
@@ -529,11 +579,11 @@ func main() {
 		ri.Config.Name = fmt.Sprintf("-path %s", args.path)
 		ri.Config.Path = args.path
 		var err error
-		ri.State, err = ri.Config.getState(!args.noFetch)
+		ri.State, err = ri.Config.getState(args)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Config.getState ERROR: %v\n", err)
 		}
-		printRepoInfo(&ri)
+		printRepoInfo(&ri, args)
 		return
 	}
 
@@ -572,8 +622,25 @@ func main() {
 	}
 
 	if args.listPaths {
-		for _, ri := range database {
-			fmt.Printf("%s\n", ri.Config.Path)
+		// Maybe I could find a more general way of listing repos with
+		// that have certain predicates
+		if args.behind {
+			for _, ri := range database {
+				if ! args.noignore && ri.Config.Ignore {
+					continue
+				}
+				rs, err := ri.Config.getState(args)
+				if err != nil {
+					panic(err)
+				}
+				if rs.RemoteState == RemoteStateBehind {
+					fmt.Printf("%s\n", ri.Config.Path)
+				}
+			}
+		} else {
+			for _, ri := range database {
+				fmt.Printf("%s\n", ri.Config.Path)
+			}
 		}
 		return
 	}
@@ -596,6 +663,13 @@ func main() {
 	}
 
 
+	if args.foreach != "" {
+		reposForeach(args, database)
+		return
+	}
+
+
+
 	sem := make(chan struct{}, args.njobs)
 	infoCh := make(chan *repoInfo)
 	var wg sync.WaitGroup
@@ -605,7 +679,7 @@ func main() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			var err error
-			r.State, err = r.Config.getState(!args.noFetch)
+			r.State, err = r.Config.getState(args)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				r.State.RemoteState = RemoteStateUnknown
@@ -613,11 +687,11 @@ func main() {
 			infoCh <- r
 		}(ri, &wg)
 	}
-	printRepoInfoHeader()
+	printRepoInfoHeader(args)
 	go func(wg *sync.WaitGroup) {
 		for ri := range infoCh {
 			if shouldPrint(args, ri) {
-				printRepoInfo(ri)
+				printRepoInfo(ri, args)
 			}
 			wg.Done()
 		}
@@ -696,6 +770,18 @@ func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
 	return 1, fmt.Errorf("could not find repo '%s' in ~/.config/repos.yml", repoName)
 }
 
+func indentString(input string, indent string) string {
+	b := strings.Builder{}
+	lines := strings.Split(input, "\n")
+	for _, l := range lines {
+		b.WriteString(indent)
+		if l != "" {
+			b.WriteString(l)
+		}
+		b.WriteRune('\n')
+	}
+	return b.String()
+}
 // Unused function
 // func getDummyRepo() *repoInfo {
 //
@@ -714,3 +800,54 @@ func newShellInRepo(database []*repoInfo, repoName string) (int, error) {
 // 	return &ri
 // }
 
+func reposForeach(a args, database []*repoInfo){
+	sem := make(chan struct{}, a.njobs)
+	outputCh := make(chan struct {*repoInfo; out string; err string; code int})
+	var wg sync.WaitGroup
+	for _, ri := range database {
+		if !a.noignore && ri.Config.Ignore {
+			continue
+		}
+		wg.Add(1)
+		go func(r *repoInfo, wg *sync.WaitGroup) {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			cmd := r.Config.command("bash", "-c", a.foreach)
+			cmd.Stderr = nil
+			out, err := cmd.Output()
+			var stderr string
+			var exitCode int
+			if err != nil {
+				if exitError, ok := err.(*exec.ExitError); ok {
+					exitCode = exitError.ExitCode()
+					stderr = string(exitError.Stderr)
+				} else {
+					stderr = fmt.Sprintf("Internal error : %+v", err)
+				}
+			}
+			outputCh <- struct{*repoInfo;out string; err string; code int}{r,strings.Trim(string(out), "\n"),strings.Trim(stderr, "\n"), exitCode}
+		}(ri, &wg)
+	}
+	go func(wg *sync.WaitGroup) {
+		for p := range outputCh {
+			if a.csv {
+				if p.err != "" {
+					fmt.Fprintf(os.Stderr, "%s\n", p.err)
+				}
+				fmt.Fprintf(os.Stdout, "%s%s%s\n", p.repoInfo.Config.Name, a.csvSep, p.out)
+			} else {
+				fmt.Fprintf(os.Stdout, "\033[1;37m%s\033[22m: git %s ", p.repoInfo.Config.Name, a.foreach)
+				if p.err == "" {
+					fmt.Printf("-> \033[1;32m%d\033[0m\n", p.code)
+					fmt.Fprintf(os.Stdout, "%s", indentString(p.out, "    > "))
+				} else {
+					fmt.Printf("-> \033[1;31m%d\033[0m\n", p.code)
+					fmt.Fprintf(os.Stdout, "%s", indentString(p.err, "    X "))
+				}
+			}
+			wg.Done()
+		}
+	}(&wg)
+	wg.Wait()
+
+}
