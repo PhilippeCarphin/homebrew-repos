@@ -23,6 +23,9 @@ def get_args():
     if not args.repo:
         args.repo = os.environ['PWD']
 
+    if not os.path.isabs(args.repo):
+        args.repo = os.path.normpath(os.path.join(os.environ['PWD'], args.repo))
+
     if not args.name:
         args.name = os.path.basename(args.repo)
 
