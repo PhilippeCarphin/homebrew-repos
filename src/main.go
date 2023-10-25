@@ -87,9 +87,19 @@ func getArgs() args {
 }
 
 type config struct {
-	Color    bool
-	Defaults repoConfig
+	Color    bool `yaml:"color"`
+	Defaults repoConfig `yaml:"defaults"`
+	RepoDir  string `yaml:"repo-dir"`
+	RepoDirScheme RepoDirScheme `yaml:"repo-dir-scheme"`
 }
+
+type RepoDirScheme string
+
+const (
+	RepoDirSchemeFlat = "flat"
+	RepoDirSchemeUrl = "url"
+	RepoDirSchemeNone = "none"
+)
 
 type repoConfig struct {
 	Path      string
@@ -297,12 +307,12 @@ func showRecentCommits(database []*repoInfo, args args) error {
 	return nil
 }
 
-func readDatabase(filename string) ([]*repoInfo, error) {
+func readDatabase(filename string) ([]*repoInfo, *config, error) {
 	repoFile := RepoFile{}
 
 	yml, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	yaml.Unmarshal(yml, &repoFile)
 
@@ -314,7 +324,7 @@ func readDatabase(filename string) ([]*repoInfo, error) {
 		}
 		database = append(database, &ri)
 	}
-	return database, nil
+	return database, &repoFile.Config, nil
 }
 
 func (r repoConfig) fetch() error {
@@ -599,7 +609,8 @@ func main() {
 		databaseFile = filepath.Join(home, ".config", "repos.yml")
 	}
 
-	database, err := readDatabase(databaseFile)
+	database, _, err := readDatabase(databaseFile)
+	// fmt.Printf("%#v", config)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening config file '%s': %+v\n", databaseFile, err)
 		os.Exit(1)
