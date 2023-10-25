@@ -32,13 +32,14 @@ add_custom_target(build-repos ALL DEPENDS repos)
 configure_file(modulefile.in modulefile @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/modulefile DESTINATION $ENV{HOME}/privatemodules RENAME repos)
 install(PROGRAMS ${repos_exec} DESTINATION bin)
-install(DIRECTORY bin/ DESTINATION bin USE_SOURCE_PERMISSIONS)
+install(DIRECTORY bin/ DESTINATION bin USE_SOURCE_PERMISSIONS PATTERN *~ EXCLUDE PATTERN .* EXCLUDE)
 install(
     DIRECTORY libexec/
     DESTINATION libexec
     USE_SOURCE_PERMISSIONS
     PATTERN __pycache__ EXCLUDE
     PATTERN *~ EXCLUDE
+    PATTERN .* EXCLUDE
 )
 
 install(
