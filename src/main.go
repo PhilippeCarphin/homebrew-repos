@@ -258,17 +258,25 @@ func (r *repoConfig) getInsertionsAndDeletions(staged bool) (int, int, int, erro
 		if len(words) != 3 {
 			return 0, 0, 0, fmt.Errorf("number of words != 3: %s", line)
 		}
-		lineIns, err := strconv.Atoi(words[0])
-		if err != nil {
-			return 0, 0, 0, err
+		if words[0] == "-" {
+			ins += 1
+		} else {
+			lineIns, err := strconv.Atoi(words[0])
+			if err != nil {
+				return 0, 0, 0, err
+			}
+			ins += lineIns
 		}
-		ins += lineIns
 
-		lineDel, err := strconv.Atoi(words[1])
-		if err != nil {
-			return 0, 0, 0, err
+		if words[1] == "-" {
+			del += 1
+		} else {
+			lineDel, err := strconv.Atoi(words[1])
+			if err != nil {
+				return 0, 0, 0, err
+			}
+			del += lineDel
 		}
-		del += lineDel
 		files += 1
 	}
 	return files, ins, del, nil
