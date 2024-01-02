@@ -161,6 +161,15 @@ See 'man rcd' for more information."
 
 }
 
+function rvi(){
+    local path
+    if ! path=$(expand_repo_dir $1) ; then
+        _repos_error "No repo '$1' in ~/.config/repos.yml"
+        return 1
+    fi
+    vim $path
+}
+
 function _repos_error(){
     if [[ -v __shell_grayscale ]] ; then
         printf "${FUNCNAME[1]}: ERROR: $*\n" >&2
@@ -213,6 +222,65 @@ function __complete_rmv(){
         return
     fi
     __complete_rcd
+}
+
+
+__complete_rvi(){
+	COMPREPLY=()
+	# We use the current word to filter out suggestions
+	local cur="${COMP_WORDS[COMP_CWORD]}"
+	# Compgen: takes the list of candidates and selects those matching ${cur}.
+	# Once COMPREPLY is set, the shell does the rest.
+
+    local repo_name=${cur%%/*}
+    local repo_subdir=${cur#*/}
+
+
+    if [[ "${cur}" == */* ]] ; then
+        if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
+            return
+        fi
+        compopt -o filenames
+        local i=0
+        # echo "\${repo_dir}/\${repo_subdir}=${repo_dir}/${repo_subdir}" >> ~/.log.txt
+        local last_full_path
+        for full_path in $(compgen -f -- ${repo_dir}/${repo_subdir}) ; do
+            if [[ $(basename ${full_path}) == .* ]] ; then
+                continue
+            fi
+            relative_path="${full_path##${repo_dir}}"
+            #
+            # The in its handling of CDPATH, the _cd function looks at
+            # whether or not we configured readline to mark directories
+            # with the 'set visible-stats on' option.  I should do that
+            # too instead of doing it only when there is a single candidate
+            #
+            if [[ -d ${full_path} ]] ; then
+                COMPREPLY[i++]="${repo_name}${relative_path}/"
+            else
+                COMPREPLY[i++]="${repo_name}${relative_path}"
+            fi
+            last_full_path=${full_path}
+        done
+        #
+        # Turn on compopt -o nospace only when we have a single candidate and
+        # we want completion to continue.  This is when the single candidate
+        # is a non-empty directory.
+        #
+        if ((${#COMPREPLY[@]} == 1)) ; then
+            if [[ -d ${last_full_path} ]] ; then
+                if ! [[ $(find ${last_full_path} -maxdepth 1) == ${last_full_path} ]] ; then
+                    compopt -o nospace
+                fi
+            fi
+        fi;
+    else
+        COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}))
+        if ((${#COMPREPLY[@]} == 1)) ; then
+            compopt -o nospace
+            COMPREPLY[0]+=/;
+        fi;
+    fi
 }
 
 __complete_rcd(){
@@ -284,6 +352,7 @@ complete -F _repo-del repo-del
 complete -F _repo-ignore repo-ignore rign
 
 complete -F __complete_rcd rcd
+complete -F __complete_rvi rvi
 complete -F __complete_rmv rmv
 
 if ! [ -e ~/.config/repos.yml ] ; then
