@@ -13,7 +13,7 @@ function expand_repo_dir(){
     fi
 
     local repo_dir
-    if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
+    if ! repo_dir=$(repos -get-dir ${repo_name}) ; then
         return 1
     fi
 
@@ -56,7 +56,7 @@ function _rcd(){
     local repo_name=${cur%%/*}
     local repo_subdir=${cur#*/}
     if [[ "${cur}" == */* ]] ; then
-        _rcd_complete_subdirectories
+        _rcd_complete_files only_dirs
     else
         _rcd_complete_repo_names
     fi
@@ -78,44 +78,132 @@ function _rcd_complete_repo_names(){
     fi
 }
 
+function rvi(){
+    local expanded_args=()
+    local file
+    local expanded_file
+    for arg in "$@" ; do
+        if expanded_file=$(expand_repo_dir $arg 2>/dev/null) ; then
+            expanded_args+=("${expanded_file}")
+        else
+            printf "${funcstack[1]}: INFO: Could not expand repo_dir '${arg}'\n" >&2
+            expanded_args+=("${arg}")
+        fi
+    done
+    vim -p "${expanded_args[@]}"
+}
 
-function _rcd_complete_subdirectories(){
+function _rvi(){
+    local cur="${words[-1]}"
+    local repo_name=${cur%%/*}
+    local repo_subdir=${cur#*/}
+    if [[ "${cur}" == */* ]] ; then
+        _rcd_complete_files
+    else
+        _rcd_complete_repo_names
+    fi
+}
+
+function _rcd_complete_files(){
     if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
         return
     fi
-    local -a valid_candidates=()
+    local only_dirs="${1}"
+    local -a basename_candidates=()
     local i=0
-    local last_full_path
-    local candidates=($(ls --color=never -d ${repo_dir}/${repo_subdir}*))
-    for full_path in "${candidates[@]}" ; do
-        if [[ -d ${full_path} ]] ; then
-            local inner_path="${full_path##${repo_dir}}"
-            valid_candidates+=("${repo_name}${inner_path}")
-            last_full_path=${full_path}
+    local last_abs_path
+
+    #
+    # Obtain candidates.  Note that for repo_dir/empty/, this array will
+    # contain a single element '.' which must be filtered out
+    #
+    local abs_candidates=($(ls --color=never -d ${repo_dir}/${repo_subdir}*(N)))
+
+    #
+    # Tell the completion system that the candidates we will be adding with
+    # compadd are the part that comes after the '/' on the command line so
+    # to complete 'a/b/c' to 'a/b/cde' or 'a/b/cxy' we will compadd 'cde' and
+    # 'cxy'.  The double-tab menu will only show 'cde' and 'cxy'.  This makes
+    # completion behave like 'compopt -f' in BASH.
+    #
+    compset -P '*/'
+
+    #
+    # Filter candidates.  Go from absolute paths to basenames while removing
+    # non-directories if necessary and filtering out '.'.
+    # As in BASH's _cd completion function we add a '/' to directories so that
+    # they are marked with a '/' in the double-tab menu.  In BASH's _cd, the
+    # function only does this if the readline options 'mark-directories' and
+    # 'mark-simlinked-directories' are on.  I just always do it.
+    #
+    local basename
+    for abs_path in "${abs_candidates[@]}" ; do
+        if [[ -n "${only_dirs}" ]] && ! [[ -d "${abs_path}" ]] ; then
+            continue
         fi
-    done
-    if ((${#valid_candidates[@]} == 1)) ; then
-        if contains_directories ${last_full_path} ; then
-            compadd -Q -S '' "${valid_candidates[1]}/"
+        if [[ "${abs_path}" == "." ]] ; then
+            continue
+        fi
+
+        basename="${abs_path##*/}"
+        if [[ -d ${abs_path} ]] ; then
+            basename_candidates+=("${basename}/")
         else
-            compadd -Q -S '' "${valid_candidates[1]}/ "
+            basename_candidates+=("${basename}")
         fi
+
+        # abs_path corresponding the single candidate if there is one
+        last_abs_path=${abs_path}
+    done
+
+    #
+    # End or don't end completion if there is a single candidate
+    #
+    if ((${#basename_candidates[@]} == 1)) ; then
+        local single_candidate=${basename_candidates[1]}
+        if _rcd_end_completion "${1}" ; then
+            single_candidate+=" "
+        fi
+        compadd -Q -S '' "${single_candidate}"
+    #
+    # End or don't end completion if there are no candidates.  In this case
+    # we just check if what we have on the command line represents a valid
+    # directory or file (this happens with repo/empty/_ which is the case
+    # where our ls commands gives '.').
+    #
+    elif ((${#basename_candidates[@]} == 0)) ; then
+        if ([[ "${1}" == only_dirs ]] && [[ -d ${repo_dir}/${repo_subdir} ]]) || [[ -e ${repo_dir}/${repo_subdir} ]] ;then
+            compadd -Q -S '' " "
+        fi
+    #
+    # And if there are more than one candidates, then we don't do anything
+    # special.
+    #
     else
-        compset -P '*/'
-        compset -S '/*'
-        valid_candidates=(${valid_candidates##*/})
-        valid_candidates=(${valid_candidates%%/*})
-        compadd -S '' -Q -f -a valid_candidates
+        compadd -S '' -Q -f -a basename_candidates
     fi;
 }
 
+function _rcd_end_completion(){
+    if [[ -n "${only_dirs}" ]] ; then
+        [[ -d "${last_abs_path}" ]] && ! _rcd_contains_directories "${last_abs_path}"
+    else
+        [[ -f "${last_abs_path}" ]] || ( [[ -d "${last_abs_path}" ]] && ! _rcd_contains_anything "${last_abs_path}" )
+    fi
+}
 
-function contains_directories(){
-    ! [[ $(find ${1} -maxdepth 1 -type d) == ${1} ]]
+function _rcd_contains_directories(){
+    ! (( $(find ${1} -maxdepth 1 -type d | wc -l) == 1 ))
+}
+
+function _rcd_contains_anything(){
+    ! (( $(find ${1} -maxdepth 1 | wc -l) == 1 ))
 }
 
 
+
 compdef _rcd rcd
+compdef _rvi rvi
 
 compdef _repos repos
 _repos(){
