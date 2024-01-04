@@ -193,13 +193,12 @@ function _rcd_end_completion(){
 }
 
 function _rcd_contains_directories(){
-    ! (( $(find ${1} -maxdepth 1 -type d | wc -l) == 1 ))
+    ! (( $(find -L ${1} -maxdepth 1 -type d | wc -l) == 1 ))
 }
 
 function _rcd_contains_anything(){
-    ! (( $(find ${1} -maxdepth 1 | wc -l) == 1 ))
+    ! (( $(find -L ${1} -maxdepth 1 | wc -l) == 1 ))
 }
-
 
 
 compdef _rcd rcd
