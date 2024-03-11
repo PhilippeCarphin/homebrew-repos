@@ -27,14 +27,16 @@ class Repo:
         self.repo_dir = repo_dir
 
     def branches(self):
-        result = subprocess.run(f"cd {self.repo_dir} && git branch | tr -d '*+ '",
+        cmd = f"git branch --format='%(refname:short)'"
+        result = subprocess.run(cmd,
+                cwd=self.repo_dir,
                 shell=True, universal_newlines=True, check=True, stdout=subprocess.PIPE)
         for l in result.stdout.splitlines():
             if 'HEAD' in l:
                 continue
             if '(' in l:
                 continue
-            yield l.strip()
+            yield l
 
     def commits_between_dates(self, begin, end, branch="HEAD"):
         """ Yield recent commits reacheable from a certain branch made up to 'days'
@@ -52,35 +54,46 @@ class Repo:
 
         Implementation details:
 
-        We use 'git rev-list {branch} --after={date} --pretty=format:{format} where date is
+        We use 'git log {branch} --after={date} --pretty=format:{format} where date is
         today's date minus the prescribed number of days and {format} makes the
         output easy to parse.
 
-        The format is "{Commit Hash} {Unix timestamp} {Commit message}"
         """
-        cmd = [
-            'git', 'rev-list', branch,
-            f'--after={begin.strftime("%Y-%m-%d %H:%M")}',
-            f'--before={end.strftime("%Y-%m-%d %H:%M")}',
-            '--pretty=format:%h %at %ae %s'
-        ]
+        # This format '%h %at %ae %an\n%s' allows me to parse the output in pairs
+        # of lines to deal with fields that can contain spaces by putting them
+        # at the end of the line or on its own line.
+        #
+        # This relies getting exactly two lines per commit which is dependant
+        # on the fields not having any newline characters inside them.  The
+        # only one where that could potentially happen is the author name since
+        # '%s' is by definition a single line.
+        #
+        # Even if I configure an author name that contains newlines, the output
+        # of git log does not print these newlines therefore we can safely rely
+        # on this method to produce exactly two lines per commit.
+        start_date = begin.strftime("%Y-%m-%d %H:%M")
+        end_date = end.strftime("%Y-%m-%d %H:%M")
+        cmd = f'git log --after="{start_date}" --before="{end_date}" --pretty=format:"%h %at %ae %an\n%s" {branch}'
         result = subprocess.run(
             cmd,
+            shell=True,
+            cwd=self.repo_dir,
             universal_newlines=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True,
         )
-        for l in result.stdout.splitlines():
-            if l.startswith("commit"):
-                continue
-            words = l.split()
+        lines = result.stdout.splitlines()
+        if len(lines) % 2 != 0:
+            raise RuntimeError("Expecting an even number of lines from command {cmd}.  It should produce exactly two lines per commit")
+        for info, message in zip(lines[::2], lines[1::2]):
+            words = info.split()
             yield {
                 "date": datetime.datetime.fromtimestamp(int(words[1])),
                 "hash": words[0],
                 "email": words[2],
-                "author": subprocess.run(f'git show -s --format="%an" {words[0]}', shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip(),
-                "message": ' '.join(words[3:]),
+                "author": ' '.join(words[3:]),
+                "message": message
             }
 
     def print_recent_commits(self, days=1):
