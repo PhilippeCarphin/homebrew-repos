@@ -32,10 +32,20 @@ def get_args():
     return args
 
 def main(args):
+
+    repo_file = args.F if args.F else os.path.expanduser("~/.config/repos.yml")
+
+    #
+    # Create config file if it doesn't exist
+    #
+    if not os.path.isfile(repo_file):
+        os.makedirs(os.path.expanduser("~/.config"), exist_ok=True)
+        with open(repo_file, 'w') as f:
+            f.write('repos: {}\n')
+
     #
     # Load repofile
     #
-    repo_file = args.F if args.F else os.path.expanduser("~/.config/repos.yml")
     with open(repo_file) as y:
         repo_dict = yaml.safe_load(y)
 

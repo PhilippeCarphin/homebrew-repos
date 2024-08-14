@@ -357,7 +357,10 @@ complete -F __complete_rmv rmv
 
 if ! [ -e ~/.config/repos.yml ] ; then
     printf "\033[33mrepos_completion.bash : WARNING: No '~/.config/repos.yml' file found.\n" >&2
+    printf "The 'rcd' command and some subcommands of 'repos' need this file to exist\n" >&2
     printf "Consider doing \n" >&2
-    printf "    'repos -generate-config > ~/.config/repos.yml'\n" >&2
-    printf "from a directory that CONTAINS git repos\033[0m\n" >&2
+    printf "    'repos find DIR --merge [--recursive]'\n" >&2
+    printf "to add all repos inside DIR to ~/.config/repos.yml or\n" >&2
+    printf "    'repos add'\n" >&2
+    printf "from within a git repository to add PWD as a git repo\n" >&2
 fi

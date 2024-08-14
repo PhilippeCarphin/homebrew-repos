@@ -618,7 +618,7 @@ func main() {
 	}
 
 	database, _, err := readDatabase(databaseFile)
-	// fmt.Printf("%#v", config)
+	// fmt.Fprintf(os.Stderr, "%#v", config)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening config file '%s': %+v\n", databaseFile, err)
 		os.Exit(1)
@@ -724,7 +724,7 @@ func main() {
 }
 
 func shouldPrint(args args, ri *repoInfo) (bool){
-	// fmt.Printf("Repo info : %+v\n", ri);
+	// fmt.Fprintf(os.Stderr, "Repo info : %+v\n", ri);
 	if args.all {
 		return true
 	}
