@@ -175,37 +175,23 @@ func (r *repoConfig) hasStagedChanges() (bool, error) {
 	return !cmd.ProcessState.Success(), nil
 }
 
-type RemoteState int
-
-const (
-	RemoteStateNormal = iota
-	RemoteStateDiverged
-	RemoteStateBehind
-	RemoteStateAhead
-	RemoteStateUnknown
-)
+type RemoteState struct {
+	Ahead int
+	Behind int
+}
 
 func (r *repoConfig) getRemoteState() (RemoteState, error) {
-	cmd := r.gitCommand("status")
+	cmd := r.gitCommand("rev-list", "--count", "--left-right", "@{upstream}...HEAD")
+	cmd.Stderr = nil
 	out, err := cmd.Output()
+	var rs RemoteState
+	fmt.Sscanf(string(out), "%d\t%d", &rs.Behind, &rs.Ahead)
+
 	if err != nil {
-		return RemoteStateNormal, fmt.Errorf("could not run git command for repo %s", r.Path)
+		return rs, nil
 	}
 
-	sout := string(out)
-	if strings.Contains(sout, "Your branch is behind") {
-		return RemoteStateBehind, nil
-	}
-
-	if strings.Contains(sout, "Your branch is ahead") {
-		return RemoteStateAhead, nil
-	}
-
-	if strings.Contains(sout, "different commits each, respectively") {
-		return RemoteStateDiverged, nil
-	}
-
-	return RemoteStateNormal, nil
+	return rs, nil
 }
 
 func (r *repoConfig) hasUntrackedFiles() (int, int, error) {
@@ -390,7 +376,7 @@ func (r repoConfig) getState(a args) (repoState, error) {
 	if !a.noFetch {
 		err := r.fetch()
 		if err != nil {
-			state.RemoteState = RemoteStateUnknown
+			state.RemoteState = RemoteState{-1,-1}
 			return state, err
 		}
 	}
@@ -476,26 +462,48 @@ func getRepoDir(database []*repoInfo, repoName string) (string, error) {
 
 
 func (rs RemoteState) String() string {
-	switch rs {
-	case RemoteStateNormal:
-		return "normal"
-	case RemoteStateBehind:
-		return "behind"
-	case RemoteStateAhead:
-		return "ahead"
-	case RemoteStateDiverged:
-		return "diverged"
-	case RemoteStateUnknown:
-		return "unknown"
+	if rs.Ahead == -1 {
+		return "UNKNOWN"
 	}
-	return "UNKNOWN"
+	if rs.Ahead > 0 && rs.Behind > 0 {
+		return fmt.Sprintf("Diverged +%d-%d", rs.Ahead, rs.Behind)
+	} else {
+		if rs.Ahead > 0 {
+			return fmt.Sprintf("Ahead +%d", rs.Ahead)
+		} else if rs.Behind > 0 {
+			return fmt.Sprintf("Behind -%d", rs.Behind)
+		} else {
+			return fmt.Sprintf("Up to date")
+		}
+	}
+}
+func (rs RemoteState) ReportString(n int) string {
+	var s string
+	var format string
+	if rs.Ahead == -1 {
+		s = "UNKNOWN"
+	}
+	format = fmt.Sprintf("\033[1;35m%%%ds\033[0m",n)
+	if rs.Ahead > 0 && rs.Behind > 0 {
+		s = fmt.Sprintf("Diverged +%d-%d", rs.Ahead, rs.Behind)
+	} else {
+		if rs.Ahead > 0 {
+			s = fmt.Sprintf("Ahead +%d", rs.Ahead)
+		} else if rs.Behind > 0 {
+			s = fmt.Sprintf("Behind -%d", rs.Behind)
+		} else {
+			format = fmt.Sprintf("%%%ds",n)
+			s = fmt.Sprintf("Up to date")
+		}
+	}
+	return fmt.Sprintf(format, s)
 }
 
 func printRepoInfoHeader(a args){
 	if a.branch {
 		fmt.Printf("REPO                         BRANCH               REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
 	} else {
-		fmt.Printf("REPO                       REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
+		fmt.Printf("REPO                          REMOTE STATE     STAGED            UNSTAGED     UNTRACKED     TSLC         COMMENT\n")
 	}
 }
 func printRepoInfo(ri *repoInfo, a args) {
@@ -505,14 +513,16 @@ func printRepoInfo(ri *repoInfo, a args) {
 	if a.branch {
 		fmt.Printf(" %-22s", ri.State.CurrentBranch)
 	}
-	switch ri.State.RemoteState {
-	case RemoteStateNormal:
-		fmt.Printf("%11s ", "Up to Date")
-	case RemoteStateBehind, RemoteStateAhead, RemoteStateDiverged:
-		fmt.Printf("\033[1;35m%11v\033[0m ", ri.State.RemoteState)
-	case RemoteStateUnknown:
-		fmt.Printf("\033[1;37;41m%11v\033[0m  ", ri.State.RemoteState)
-	}
+	// switch ri.State.RemoteState {
+	// case RemoteStateNormal:
+	// 	fmt.Printf("%11s ", "Up to Date")
+	// case RemoteStateBehind, RemoteStateAhead, RemoteStateDiverged:
+	// 	fmt.Printf("\033[1;35m%11v\033[0m ", ri.State.RemoteState)
+	// case RemoteStateUnknown:
+	// 	fmt.Printf("\033[1;37;41m%11v\033[0m  ", ri.State.RemoteState)
+	// }
+	fmt.Printf("%s", ri.State.RemoteState.ReportString(14))
+
 	if ri.State.StagedChanges {
 		fmt.Printf(" \033[1;33m(%2df, +%-3d,-%-3d)\033[0m", ri.State.StagedFiles,  ri.State.StagedInsertions, ri.State.StagedDeletions)
 	} else {
@@ -569,15 +579,16 @@ func main() {
 		}
 		path, err := exec.LookPath(subcommand)
 		if err != nil {
-			fmt.Printf("No such subcommand '%s'\n", args.posargs[0])
-			syscall.Exit(1)
+			fmt.Fprintf(os.Stderr, "No such subcommand '%s'\n", args.posargs[0])
+			os.Exit(1)
+			// syscall.Exit(1)
 		}
 
 		if args.posargs[0] == "help" {
 			cmd := []string{"man", subcommand}
 			err := syscall.Exec("/usr/bin/man", cmd, os.Environ())
 			if err != nil {
-				fmt.Printf("No manpage for subcommand %s\n", args.posargs[1])
+				fmt.Fprintf(os.Stderr, "No manpage for subcommand %s\n", args.posargs[1])
 				syscall.Exit(1)
 			}
 		}
@@ -587,7 +598,7 @@ func main() {
 
 		err = syscall.Exec(path, args.posargs, append(os.Environ(), "FROM_REPOS=YES"))
 		if err != nil {
-			fmt.Printf("error with subcommand: %v\n", err)
+			fmt.Fprintf(os.Stderr, "error with subcommand: %v\n", err)
 			syscall.Exit(1)
 		}
 	}
@@ -652,7 +663,7 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
-				if rs.RemoteState == RemoteStateBehind {
+				if rs.RemoteState.Behind > 0 {
 					fmt.Printf("%s\n", ri.Config.Path)
 				}
 			}
@@ -701,7 +712,7 @@ func main() {
 			r.State, err = r.Config.getState(args)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
-				r.State.RemoteState = RemoteStateUnknown
+				r.State.RemoteState = RemoteState{-1,-1}
 			}
 			infoCh <- r
 		}(ri, &wg)
@@ -733,7 +744,7 @@ func shouldPrint(args args, ri *repoInfo) (bool){
 		return true
 	}
 
-	return !ri.Config.Ignore && ri.State.RemoteState != RemoteStateNormal
+	return !ri.Config.Ignore && (ri.State.RemoteState.Ahead > 0 || ri.State.RemoteState.Behind > 0)
 }
 
 
