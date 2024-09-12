@@ -14,6 +14,9 @@
 # The compgen then filters out the candidates that don't begin with the word we are
 # completing. In this case, if '--' is one of the words, we set empty candidates,
 # otherwise, we look at the previous word and delegate # to candidate-setting functions
+# NOTE:  Spack's environment setup defines a function '_repos' that is reused
+# between its completion functions.  Therefore, it is better to call this
+# function something else than that.
 __complete_repos() {
 
 	COMPREPLY=()
