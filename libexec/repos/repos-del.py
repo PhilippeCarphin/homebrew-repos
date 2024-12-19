@@ -5,6 +5,9 @@ import argparse
 import os
 import subprocess
 import shutil
+import _repos_logging
+
+logger = _repos_logging.logger
 
 DESCRIPTION = """
 Delete a repo from disc and from the repos config file.  NOTE: Although this
@@ -35,11 +38,11 @@ def main():
 
     repo = d['repos'].get(args.name)
     if repo is None:
-        print(f"No such repo '{args.name}'")
+        logger.error(f"No such repo '{args.name}'")
         return 1
 
     path = repo['path']
-    print(f"Repo '{args.name}' at path '{path}'")
+    logger.info(f"Repo '{args.name}' at path '{path}'")
 
     try:
         if not can_erase(repo):
@@ -48,16 +51,16 @@ def main():
         if resp.lower() != 'yes':
             return 0
         shutil.rmtree(path)
-        print(f"Repo '{path}' deleted")
+        logger.info(f"Repo '{path}' deleted")
     except FileNotFoundError as e:
-        print(f"Repo not found: {e}")
+        logger.info(f"Repo not found: {e}")
 
     del d['repos'][args.name]
 
     with open(repo_file, 'w') as y:
         yaml.dump(d,y)
 
-    print(f"Repo removed from repo_file '{repo_file}'")
+    logger.info(f"Repo removed from repo_file '{repo_file}'")
 
 def can_erase(repo):
     result = True
@@ -71,19 +74,19 @@ def can_erase(repo):
     ).stdout
 
     if 'Untracked files' in status:
-        print(f"There are untracked files, please cleanup first")
+        logger.error(f"There are untracked files, please cleanup first")
         result = False
 
     if 'Your branch is behind' in status:
-        print(f"Current branch is behind its remote counterpart, push first")
+        logger.error(f"Current branch is behind its remote counterpart, push first")
         result = False
 
     if 'Changes not staged' in status:
-        print(f"There are unstaged changes, make a commit first")
+        logger.error(f"There are unstaged changes, make a commit first")
         result = False
 
     if 'Changes to be committed' in status:
-        print(f"There are staged changes, make a commit first")
+        logger.error(f"There are staged changes, make a commit first")
         result = False
 
     return result

@@ -4,9 +4,9 @@ import sys
 import yaml
 import argparse
 import os
+import _repos_logging
 
-class RepoAdderError(Exception):
-    pass
+logger = _repos_logging.logger
 
 def get_args():
     p = argparse.ArgumentParser(description="Add a repo to the repos.yml config file")
@@ -16,7 +16,7 @@ def get_args():
     p.add_argument("--name", help="Specify name for repo in config file")
 
     if "FROM_REPOS" in os.environ:
-        print(f"DEBUG: Called by repos executable by doing 'repos add'")
+        logger.debug(f"Called by repos executable by doing 'repos add'")
 
     args = p.parse_args()
 
@@ -53,19 +53,22 @@ def main(args):
     # Check that it is a git repo by checking for a .git directory
     #
     if not os.path.isdir(os.path.join(args.repo, '.git')):
-        raise RepoAdderError(f"It seems repo '{args.repo}' is not a git repository, skipping ...")
+        logger.error(f"It seems repo '{args.repo}' is not a git repository, skipping ...")
+        return 1
 
     #
     # Check if the repo is already there
     #
     if args.name in repo_dict['repos']:
-        raise RepoAdderError(f"Repo '{args.repo}' is already in '{repo_file}' under name '{args.name}' skipping ...")
+        logger.info(f"Repo '{args.repo}' is already in '{repo_file}' under name '{args.name}' skipping ...")
+        return 0
 
     #
     # Add to the repo database
     #
     repo_dict['repos'][args.name] = {"path": args.repo}
-    print(f"{sys.argv[0]}: \033[1;35mINFO\033[0m: Added '{args.repo}' to '{repo_file}' under name '{args.name}'")
+    logger.info(f"Added '{args.repo}' to '{repo_file}' under name '{args.name}'")
+
 
     #
     # Save back to file
@@ -74,7 +77,4 @@ def main(args):
         yaml.dump(repo_dict,y)
 
 if __name__ == "__main__":
-    try:
-        sys.exit(main(get_args()))
-    except RepoAdderError as e:
-        print(f"{sys.argv[0]}: \033[1;31mERROR\033[0m: {e}")
+    sys.exit(main(get_args()))

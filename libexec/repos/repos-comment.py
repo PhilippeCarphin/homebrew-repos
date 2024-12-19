@@ -3,11 +3,17 @@ import yaml
 import os
 import sys
 import argparse
+import logging
+import _repos_logging
+import _repos_base
+
+logger = _repos_logging.get_repos_logger()
 
 def get_args():
     p = argparse.ArgumentParser(description="Set the ignore flag of a repo to true")
     p.add_argument("-F", help="Specify alternate file to ~/.config/repos.yml")
     p.add_argument("--name", help="Specify name for repo in config file.  Defaults to basename(os.getcwd())")
+    p.add_argument("--debug", action='store_true')
     action = p.add_mutually_exclusive_group()
     action.add_argument("--get", help="Get comment for repo", action='store_true')
     action.add_argument("--set", help="Set comment for repo", metavar='COMMENT')
@@ -17,38 +23,44 @@ def get_args():
 
 def main():
     args = get_args()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
     repo_file = args.F if args.F else os.path.expanduser("~/.config/repos.yml")
 
     if args.name is None:
-        print(f"Using basename(PWD) as repo name to commment", file=sys.stderr)
-        args.name = os.path.basename(os.getcwd())
+        repo_root = _repos_base.get_repo_root(os.getcwd())
+        if repo_root is None:
+            logger.error(f"No --name provided and could not find repo root starting at PWD")
+            return 1
+        logger.info(f"Using basename(REPO_ROOT): '{repo_root.name}' as repo name to commment")
+        args.name = os.path.basename(repo_root.name)
 
     with open(repo_file) as f:
         database = yaml.safe_load(f)
 
     if args.name not in database['repos'] :
-        print(f"No repo with name '{args.name}' in repo file '{repo_file}'", file=sys.stderr)
+        logger.error(f"No repo with name '{args.name}' in repo file '{repo_file}'")
         return 1
 
     repos = database['repos']
     try:
         repo = repos[args.name]
     except KeyError as e:
-        print(f"Repo '${args.name}' not found in repos section of repo_file '{repo_file}'", file=sys.stderr)
+        logger.error(f"Repo '${args.name}' not found in repos section of repo_file '{repo_file}'")
         return 1
 
     if args.set or args.clear:
         if args.set == "":
-            print(f"Use --del to remove comments", file=sys.stderr)
+            logger.error(f"Use --del to remove comments", file=sys.stderr)
             return 1
         if args.set:
             if 'comment' in repo:
-                print(f"Replacing previous comment '{repo['comment']}'", file=sys.stderr)
-            print(f"Setting comment to '{args.set}'", file=sys.stderr)
+                logger.error(f"Replacing previous comment '{repo['comment']}'")
+            logger.info(f"Setting comment to '{args.set}'")
             repo['comment'] = args.set
         elif args.clear:
             if 'comment'in repo:
-                print(f"Removing comment '{repo['comment']}'", file=sys.stderr)
+                logger.info(f"Removing comment '{repo['comment']}'")
                 del repo['comment']
         with open(repo_file, 'w') as f:
             yaml.dump(database, f)
@@ -56,7 +68,7 @@ def main():
         if 'comment' in repo:
             print(repo['comment'])
         else:
-            print("The repo '{args.name}' has no comment", file=sys.stderr)
+            logger.error("The repo '{args.name}' has no comment", file=sys.stderr)
             return 1
 
 sys.exit(main())

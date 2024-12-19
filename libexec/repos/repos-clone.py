@@ -6,6 +6,13 @@ import argparse
 import os
 import subprocess
 
+import _repos_logging
+
+logger = _repos_logging.logger
+
+class RepoError(Exception):
+    pass
+
 def get_args():
     p = argparse.ArgumentParser(description="Clone a git repo into repository tree and add it to repo file")
 
@@ -14,7 +21,7 @@ def get_args():
     p.add_argument("--name", help="Specify name for repo in config file")
 
     if "FROM_REPOS" in os.environ:
-        print(f"DEBUG: Called by repos executable by doing 'repos clone'")
+        logger.debug(f"Called by repos executable by doing 'repos clone'")
 
     args = p.parse_args()
 
@@ -24,7 +31,6 @@ def get_args():
 
 def main():
     args = get_args()
-    print(args)
     #
     # Load repofile
     #
@@ -37,19 +43,19 @@ def main():
     try:
         os.makedirs(os.path.dirname(repo_dest), exist_ok=True)
     except OSError as e:
-        print(f"Could not create container directory: {e}")
+        logger.error(f"Could not create container directory: {e}")
         return 1
 
     result = subprocess.run(["git", "clone", args.url, repo_dest])
     if result.returncode != 0:
-        print(f"repos-clone: failed to clone '{args.url}'")
+        logger.error(f"repos-clone: failed to clone '{args.url}'")
         return 1
     if args.name:
         result = subprocess.run(["repos", "add", repo_dest, "--name", args.name])
     else:
         result = subprocess.run(["repos", "add", repo_dest])
     if result.returncode != 0:
-        print(f"repos-clone: ERROR adding repo")
+        logger.error(f"failed to adding repo")
         return 1
 
 def get_repo_dest(args, repo_dict):
@@ -57,16 +63,16 @@ def get_repo_dest(args, repo_dict):
     repo_basename = os.path.basename(args.url)
 
     if 'config' not in repo_dict:
-        print(f"repos-clone is more useful when config file has a config section.  See section CONFIGURATION in 'man repos'")
+        logger.info(f"repos-clone is more useful when config file has a config section.  See section CONFIGURATION in 'man repos'")
         return os.path.join(os.environ['PWD'], repo_basename)
 
     config = repo_dict['config']
     if 'repo-dir' not in config:
-        print(f"repos-clone: no key 'repo-dir' in config section of {repo_file}")
+        logger.info(f"no key 'repo-dir' in config section of {repo_file}")
         return os.path.join(os.environ['PWD'], repo_basename)
 
     if 'repo-dir-scheme' not in config:
-        print(f"repos-clone no key 'repo-dir-scheme' in config section of {repo_file}")
+        logger.info(f"key 'repo-dir-scheme' in config section of {repo_file}")
         return os.path.join(config['repo-dir'], repo_basename)
 
     scheme = config['repo-dir-scheme']
@@ -91,4 +97,8 @@ def url_to_directory(url):
         raise RepoError(f"URL '{url}' must begin with either 'git@' or 'https://'")
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except RepoError as e:
+        logger.error(e)
+        sys.exit(1)

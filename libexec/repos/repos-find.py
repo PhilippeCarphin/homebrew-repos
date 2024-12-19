@@ -5,6 +5,10 @@ import argparse
 import pprint
 import sys
 import re
+import _repos_logging
+import logging
+
+logger = _repos_logging.logger
 
 def get_args():
     p = argparse.ArgumentParser(description="Find git repos recursively and produce YAML code for ~/.config/repos.yml on STDOUT.  Use the --merge option to merge the results into the config file")
@@ -19,20 +23,23 @@ def get_args():
 
     args = p.parse_args()
     if args.include and args.exclude:
-        print("Can only have one of --include or --exclude")
+        logger.error("Can only have one of --include or --exclude")
         p.parse_args(['-h'])
     if args.exclude:
         if '/' in args.exclude:
-            print("--exclude pattern contains a '/' but pattern is used to match on path components")
+            logger.warning("--exclude pattern contains a '/' but pattern is used to match on path components")
         args.exclude = re.compile(args.exclude)
     if args.include:
         if '/' in args.include:
-            print("--include pattern contains a '/' but pattern is used to match on path components")
+            logger.warning("--include pattern contains a '/' but pattern is used to match on path components")
         args.include = re.compile(args.include)
 
     for d in args.dirs:
         if not os.path.isdir(d):
-            print(f"Warning: directory '{d}' does not exist or is not a directory")
+            logger.warning(f"directory '{d}' does not exist or is not a directory")
+
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
 
     return args
 
@@ -54,8 +61,7 @@ def is_git_repo(path):
     return False
 
 def find_git_repos(directory, recurse, args):
-    if args.debug:
-        print(f"Doing directory {directory}", file=sys.stderr)
+    logger.debug(f"Doing directory {directory}")
 
     if is_git_repo(directory):
         name = os.path.basename(directory)
@@ -93,7 +99,7 @@ def main():
                 d = os.path.join(os.getcwd(), d)
             repos.update(find_git_repos(directory=d, recurse=True, args=args))
     except KeyboardInterrupt:
-        print("KeyboardInterrupt, results so far:")
+        logger.info("KeyboardInterrupt, results so far:")
         yaml.dump({'repos': repos})
         return 130
     if args.merge:
@@ -103,13 +109,13 @@ def main():
             base_rf = yaml.safe_load(f)
             for k in repos.keys():
                 if k not in base_rf['repos']:
-                    print(f"Adding repo '{k}' at path '{repos[k]['path']}'", file=sys.stderr)
+                    logger.info(f"Adding repo '{k}' at path '{repos[k]['path']}'")
                     base_rf['repos'][k] = repos[k]
         if args.cleanup:
             for k in list(base_rf['repos'].keys()):
                 v = base_rf['repos'][k]
                 if not os.path.isdir(v['path']):
-                    print(f"Deleting key {k}: path {v['path']} does not exist", file=sys.stderr)
+                    logger.info(f"Deleting key {k}: path {v['path']} does not exist")
                     del base_rf['repos'][k]
         with open(args.repo_file, 'w') as f:
             yaml.dump(base_rf, f)

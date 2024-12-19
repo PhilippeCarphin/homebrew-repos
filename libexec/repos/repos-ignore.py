@@ -3,13 +3,22 @@ import yaml
 import os
 import sys
 import argparse
+import logging
+
+import _repos_logging
+import _repos_base
+
+logger = _repos_logging.logger
 
 def get_args():
     p = argparse.ArgumentParser(description="Set the ignore flag of a repo to true")
     p.add_argument("-F", help="Specify alternate file to ~/.config/repos.yml")
     p.add_argument("--name", help="Specify name for repo in config file.  Defaults to basename(os.getcwd())")
     p.add_argument("--unignore", help="Unignore the repo", action='store_true')
+    p.add_argument("--debug", action='store_true')
     args = p.parse_args()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
     return args
 
 def main():
@@ -17,14 +26,18 @@ def main():
     repo_file = args.F if args.F else os.path.expanduser("~/.config/repos.yml")
 
     if args.name is None:
-        print(f"Using basename(PWD) as repo name to ignore")
-        args.name = os.path.basename(os.getcwd())
+        repo_root = _repos_base.get_repo_root(os.getcwd())
+        if repo_root is None:
+            logger.error(f"No --name provided and could not find repo root starting at PWD")
+            return 1
+        logger.info(f"Using basename(REPO_ROOT): '{repo_root.name}' as repo name to commment")
+        args.name = os.path.basename(repo_root.name)
 
     with open(repo_file) as f:
         database = yaml.safe_load(f)
 
     if args.name not in database['repos'] :
-        print(f"No repo with name '{args.name}' in repo file '{repo_file}'")
+        logger.error(f"No repo with name '{args.name}' in repo file '{repo_file}'")
         return 1
 
     repo = database['repos'][args.name]
@@ -33,9 +46,9 @@ def main():
             del repo['ignore']
     else:
         if 'ignore' in repo and repo['ignore']:
-            print(f"Repo is already ignored")
+            logger.warning(f"Repo is already ignored")
         else:
-            print(f"Adding 'ignore: true' to repo '{args.name}'")
+            logger.info(f"Adding 'ignore: true' to repo '{args.name}'")
             repo['ignore'] = True
 
 

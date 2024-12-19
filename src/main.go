@@ -593,7 +593,7 @@ func main() {
 			}
 		}
 		if args.configFile != "" {
-			args.posargs = append(args.posargs, "-F", "args.configFile")
+			args.posargs = append(args.posargs, "-F", args.configFile)
 		}
 
 		err = syscall.Exec(path, args.posargs, append(os.Environ(), "FROM_REPOS=YES"))
