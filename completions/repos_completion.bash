@@ -121,14 +121,14 @@ complete -o default -F __complete_repos repos
 function expand_repo_dir(){
 
     local repo_name=${1%%/*}
-
     local repo_subdir
     if [[ ${1} == */* ]] ; then
         repo_subdir=${1#*/}
     fi
+    shift
 
     local repo_dir
-    if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
+    if ! repo_dir=$(repos -get-dir ${repo_name} "$@" 2>/dev/null) ; then
         return 1
     fi
 
@@ -271,10 +271,8 @@ __complete_rvi(){
         # is a non-empty directory.
         #
         if ((${#COMPREPLY[@]} == 1)) ; then
-            if [[ -d ${last_full_path} ]] ; then
-                if ! [[ $(find ${last_full_path} -maxdepth 1) == ${last_full_path} ]] ; then
-                    compopt -o nospace
-                fi
+            if [[ -d ${last_full_path} ]] && __has_contents ${last_full_path} ; then
+                compopt -o nospace
             fi
         fi;
     else
@@ -285,50 +283,145 @@ __complete_rvi(){
         fi;
     fi
 }
+__complete_relative_dirs(){
+    # Complete subdirs of container
+    local container=$1
+    local subdir=$2
+    local prefix=$3
+    compopt -o filenames
+    local i=0
+    # echo "\${repo_dir}/\${repo_subdir}=${repo_dir}/${repo_subdir}" >> ~/.log.txt
+    local last_full_path
+    for full_path in $(compgen -d -- ${container}/${subdir}) ; do
+        if [[ $(basename ${full_path}) == .* ]] ; then
+            continue
+        fi
+        # echo "full_path=${full_path}" >> ~/.log.txt
+        relative_path="${full_path##${container}}"
+        # echo "relative_path=${relative_path}" >> ~/.log.txt
+        COMPREPLY[i++]="${prefix}${relative_path}"
+    done
+}
+
+__has_subdirs(){
+    if ! [[ -d $1 ]] ; then
+        return 1
+    fi
+    # Note this command works for MacOS and Linux.  BSD find does not have
+    # the -printf option.  It would be nicer to do `-printf . -quit` since
+    # we only care about empty vs non-empty.  But since we only care about
+    # empty vs non-empty, this works just as well.
+    local res=$(find -L $1 -mindepth 1 -maxdepth 1 -type d -print -quit)
+    (( ${#res} > 0 ))
+}
+
+__has_contents(){
+    if ! [[ -d $1 ]] ; then
+        return 1
+    fi
+
+    local res=$(find -L $1 -mindepth 1 -maxdepth 1 -print -quit)
+    (( ${#res} > 0 ))
+}
+
 
 __complete_rcd(){
-	COMPREPLY=()
-	# We use the current word to filter out suggestions
-	local cur="${COMP_WORDS[COMP_CWORD]}"
-	# Compgen: takes the list of candidates and selects those matching ${cur}.
-	# Once COMPREPLY is set, the shell does the rest.
-
-    local repo_name=${cur%%/*}
-    local repo_subdir=${cur#*/}
+    __complete_rcd_internal
+}
 
 
-    if [[ "${cur}" == */* ]] ; then
-        if ! repo_dir=$(repos -get-dir ${repo_name} 2>/dev/null) ; then
+
+__complete_rcd_internal(){
+    local repo_file=()
+    if [[ -n "$1" ]] ; then
+        repo_file=(-F "$1")
+    fi
+
+    COMPREPLY=()
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+
+    compopt -o nospace
+    if [[ "${cur}" != */* ]] ; then
+        COMPREPLY=( $(compgen -W "$(repos -list-names "${repo_file[@]}" 2>/dev/null)" -- "${cur}"))
+    else
+        local repo_name=${cur%%/*}
+        local repo_subdir=${cur#*/}
+        if ! repo_dir=$(repos -get-dir ${repo_name} "${repo_file[@]}" 2>/dev/null) ; then
             return
         fi
         compopt -o filenames
-        local i=0
-        # echo "\${repo_dir}/\${repo_subdir}=${repo_dir}/${repo_subdir}" >> ~/.log.txt
-        local last_full_path
-        for full_path in $(compgen -d -- ${repo_dir}/${repo_subdir}) ; do
-            if [[ $(basename ${full_path}) == .* ]] ; then
-                continue
-            fi
-            # echo "full_path=${full_path}" >> ~/.log.txt
-            relative_path="${full_path##${repo_dir}}"
-            # echo "relative_path=${relative_path}" >> ~/.log.txt
-            COMPREPLY[i++]="${repo_name}${relative_path}"
-            last_full_path=${full_path}
-        done
-        if ((${#COMPREPLY[@]} == 1)) ; then
-            if ! [[ $(find ${last_full_path} -maxdepth 1 -type d) == ${last_full_path} ]] ; then
-                compopt -o nospace
-                COMPREPLY[0]+=/;
-            fi
-        fi;
+        __complete_relative_dirs "${repo_dir}" "${repo_subdir}" "${repo_name}"
+        local dir_to_check=${repo_dir}/${COMPREPLY[0]##${repo_name}/}
+        if ((${#COMPREPLY[@]} == 1 )) && ! __has_subdirs ${dir_to_check} ; then
+            compopt +o nospace
+        fi
+    fi
+    if ((${#COMPREPLY[@]} == 1)) ; then
+        COMPREPLY[0]+=/;
+    fi;
+}
+
+orepos(){
+    local name=$1 ; shift
+    repos -F $HOME/.config/repos/${name}.yml "$@"
+}
+
+__complete_orepos(){
+    local cur prev cword words
+    _init_completion || return
+    if ((cword == 1)) ; then
+        COMPREPLY=($(cd $HOME/.config/repos ;
+            for x in *.yml ; do
+                if [[ "${x%%.yml}" == ${cur}* ]] ; then
+                    echo "${x%%.yml}"
+                fi
+            done
+        ))
     else
-        COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- ${cur}))
-        if ((${#COMPREPLY[@]} == 1)) ; then
-            compopt -o nospace
-            COMPREPLY[0]+=/;
-        fi;
+        __complete_repos
     fi
 }
+
+complete -F __complete_orepos orepos
+
+orcd(){
+    local repo_file_basename=$1
+    local dir=$2
+    if ! dir="$(expand_repo_dir ${dir} -F ${HOME}/.config/repos/${repo_file_basename}.yml)" ; then
+        echo "${FUNCNAME[0]}: ERROR: Could not get directory of repo '${repo_name}' in '${HOME}/.config/${repo_file_basename}.yml'"
+        return 1
+    fi
+    printf "\033[33mcd ${dir}\033[0m\n"
+    cd "$dir"
+}
+
+__complete_orcd(){
+    local cur prev cword words
+    _init_completion || return
+    if ((cword == 1)) ; then
+        local x y
+        for x in $HOME/.config/repos/*.yml ; do
+            x=${x##*/}
+            x=${x%%.yml}
+            if [[ "${x}" == ${cur}* ]] ; then
+                COMPREPLY+=(${x})
+            fi
+        done
+    elif ((cword > 1)) ; then
+        local repo_file=${HOME}/.config/repos/${words[1]}.yml
+        if ! [[ -f ${repo_file} ]] ; then
+            # Expected error.
+            return 1
+        fi
+        if [[ ${cur} == */* ]] ; then
+            __complete_rcd_internal ${repo_file}
+        else
+            COMPREPLY=($(compgen -S/ -W "$(repos -F ${repo_file} -list-names)" -- ${cur} ))
+            compopt -o nospace
+        fi
+    fi
+}
+complete -F __complete_orcd orcd
 
 _repo-ignore(){
     local prev=${COMP_WORDS[${COMP_CWORD}-1]}
