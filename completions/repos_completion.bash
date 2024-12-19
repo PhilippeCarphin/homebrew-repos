@@ -465,5 +465,5 @@ if ! [ -e ~/.config/repos.yml ] ; then
     printf "    'repos find DIR --merge [--recursive]'\n" >&2
     printf "to add all repos inside DIR to ~/.config/repos.yml or\n" >&2
     printf "    'repos add'\n" >&2
-    printf "from within a git repository to add PWD as a git repo\n" >&2
+    printf "from within a git repository to add PWD as a git repo\033[0m\n" >&2
 fi
