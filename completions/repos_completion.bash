@@ -40,11 +40,14 @@ __suggest_repos_candidates(){
 		return
 	fi
 
+    if (( COMP_CWORD == 1)) ; then
+        __suggest_repos_subcommands
+    fi
+
 	option=$(__repos_get_current_option)
 	if __repos_option_has_arg "$option" ; then
 		__suggest_repos_args_for_option ${option}
-	else
-		# No positional arguments yet
+	elif [[ "${cur}" == -* ]] ; then
 		__suggest_repos_options
 	fi
 }
@@ -59,6 +62,10 @@ __repos_dash_dash_in_words(){
 	return 1
 }
 
+__suggest_repos_subcommands(){
+    candidates+=" find add del comment"
+}
+
 __repos_get_current_option(){
 	# The word before that
 	local prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -68,7 +75,7 @@ __repos_get_current_option(){
 }
 
 __suggest_repos_options(){
-	candidates="-F -all -days -generate-config -get-dir -j -list-names -list-paths -no-fetch -noignore -path -r -recent"
+	candidates+=" -F -all -days -generate-config -get-dir -j -list-names -list-paths -no-fetch -noignore -path -r -recent"
 }
 __repos_option_has_arg(){
     local option=$1
