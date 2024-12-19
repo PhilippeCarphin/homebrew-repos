@@ -22,9 +22,6 @@ def get_args():
     p.add_argument("--cleanup", action='store_true', help="Remove repos that don't exist anymore.  Only valid when using the --merge option")
 
     args = p.parse_args()
-    if args.include and args.exclude:
-        logger.error("Can only have one of --include or --exclude")
-        p.parse_args(['-h'])
     if args.exclude:
         if '/' in args.exclude:
             logger.warning("--exclude pattern contains a '/' but pattern is used to match on path components")
@@ -68,11 +65,13 @@ def find_git_repos(directory, recurse, args):
         return
 
     dirs = filter(lambda c: not c.startswith("."), contents)
-    dirs = filter( lambda d:os.path.isdir(os.path.join(directory, d)), dirs)
-    if args.exclude:
-        dirs = filter(lambda d: not args.exclude.search(d), dirs)
-    if args.include:
+    dirs = set(filter(lambda d:os.path.isdir(os.path.join(directory, d)), dirs))
+    if args.include and args.exclude:
+        dirs = filter(lambda d: (not args.exclude.search(d)) or (args.include.search(d)), dirs)
+    elif args.include:
         dirs = filter(lambda d: args.include.search(d), dirs)
+    elif args.exclude:
+        dirs = filter(lambda d: not args.exclude.search(d), dirs)
     for d in dirs:
         abs_dir=os.path.join(directory,d)
         if is_git_repo(abs_dir):
