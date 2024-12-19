@@ -78,10 +78,10 @@ def find_git_repos(directory, recurse, args):
         if is_git_repo(abs_dir):
             name = os.path.basename(d)
             logger.debug(f"Yielding ({name}, {{'path': '{abs_dir}'}})")
-            yield (name, {'path': abs_dir})
+            yield (name, {'path': os.path.normpath(abs_dir)})
         elif recurse:
             logger.debug(f"Recursing into directory {d}")
-            yield from find_git_repos(os.path.join(directory, d), recurse, args=args)
+            yield from find_git_repos(os.path.join(directory, d), recurse, args)
 
 def soft_update(original, new):
     """ Update original with keys that are in new but not already in original """
@@ -93,7 +93,7 @@ def main():
         for d in args.dirs:
             if not os.path.isabs(d):
                 d = os.path.join(os.getcwd(), d)
-            repos.update(find_git_repos(directory=d, recurse=True, args=args))
+            repos.update(find_git_repos(d, args.recursive, args))
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt, results so far:")
         yaml.dump({'repos': repos})
