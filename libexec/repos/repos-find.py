@@ -62,17 +62,6 @@ def is_git_repo(path):
 
 def find_git_repos(directory, recurse, args):
     logger.debug(f"Doing directory {directory}")
-
-    if is_git_repo(directory):
-        name = os.path.basename(directory)
-        yield (name, {'path': directory})
-        return
-
-    if not os.path.isdir(directory):
-        return
-
-    if not recurse:
-        return
     try:
         contents = os.listdir(directory)
     except PermissionError:
@@ -85,7 +74,14 @@ def find_git_repos(directory, recurse, args):
     if args.include:
         dirs = filter(lambda d: args.include.search(d), dirs)
     for d in dirs:
-        yield from find_git_repos(os.path.join(directory, d), args.recursive, args=args)
+        abs_dir=os.path.join(directory,d)
+        if is_git_repo(abs_dir):
+            name = os.path.basename(d)
+            logger.debug(f"Yielding ({name}, {{'path': '{abs_dir}'}})")
+            yield (name, {'path': abs_dir})
+        elif recurse:
+            logger.debug(f"Recursing into directory {d}")
+            yield from find_git_repos(os.path.join(directory, d), recurse, args=args)
 
 def soft_update(original, new):
     """ Update original with keys that are in new but not already in original """
