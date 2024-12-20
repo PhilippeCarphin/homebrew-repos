@@ -1,0 +1,44 @@
+#+TITLE: orcd
+
+* NAME
+
+orepos - shortcut for repos with alternate config file
+
+* SYNOPSIS
+
+#+begin_src shell
+orepos NAME [options to repos]
+#+end_src
+
+* DESCRIPTION
+
+This command is like =repos= but with an alternate config file specified by
+=NAME=.
+
+This is used to work with other sets of repos perhaps those of colleagues on a
+shared filesystem.
+
+The alternate config file is =~/.config/repos/${NAME}.yml=.
+
+This function has autocomplete similar to =repos= except that for the first
+argument, it proposes the names of files without =.yml= of files in
+=~/.config/repos/=.
+
+This shell function is simply a shortcut:
+#+begin_src
+orepos(){
+      repos -F ~/.config/repos/${NAME}.yml -no-fetch "$@"
+}
+#+end_src
+where the =-no-fetch= is added by default because the intention is to work
+with other people's repos.  We usually cannot run =git fetch= in other
+people's repos because we don't have permission to modify their files.
+
+
+* SEE ALSO
+repos, rcd, repo-find
+* AUTHOR
+Philippe Carphin
+
+* COPYRIGHT
+Philippe Carphin

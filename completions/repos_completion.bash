@@ -143,18 +143,20 @@ function expand_repo_dir(){
 }
 
 function rcd(){
-    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] ; then
+    case $1 in
+        --help) man ${FUNCNAME[0]} ; return ;;
+        -h)
         echo "rcd : 'repos-cd' is a shell function to cd to repos
 by their names in ~/.config/repos.yml.  This function
 has AUTOCOMPLETE based on the repos listed in ~/.config/repos.yml
 
 Usage:
 
-    rcd REPO-NAME
+    rcd REPO-NAME/SUBDIR
 
-See 'man rcd' for more information."
-        return
-    fi
+See 'man rcd' or '${FUNCNAME[0]} --help' for more information."
+        return ;;
+    esac
 
     local dir
     if ! dir=$(expand_repo_dir $1) ; then
@@ -370,7 +372,11 @@ __complete_rcd_internal(){
 
 orepos(){
     local name=$1 ; shift
-    repos -F $HOME/.config/repos/${name}.yml "$@"
+    case $1 in
+        --help) man ${FUNCNAME[0]} ; return ;;
+        -h) printf "${FUNCNAME[0]} NAME [repos-arguments]\n\n\tShortcut for 'repos -F ~/.config/repos/\${NAME}.yml -no-fetch \"\$@\"\n" return ;;
+    esac
+    repos -F $HOME/.config/repos/${name}.yml -no-fetch "$@"
 }
 
 __complete_orepos(){

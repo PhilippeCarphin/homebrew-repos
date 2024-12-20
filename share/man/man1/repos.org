@@ -5,11 +5,12 @@ repos - a command line tool keep track of local git repos.
 
 #+begin_src shell
 repos [-no-fetch] [-j NJOBS]
-repos -generate-config >> ~/.config/repos.yml
 repos -get-dir REPO
+rcd REPO-NAME/SUBDIR
 #+end_src
 
 * DESCRIPTION
+
 Without any arguments, the ~repos~ looks in ~$HOME/.config/repos.yml~ and prints
 a report of on various information about the git repo:
 
@@ -29,9 +30,9 @@ utils                            behind                   ( 1f, +16 ,-1  )     0
 
 By default, the repositories whose that are up to date with the remote, have no
 staged or unstaged changes, and have no untracked files or directories are
-not shown.
+not shown (see CONFIGURATION and the =-no-ignore= and =-all= options).
 
-The report is colored according to attract attention to the repos that likely
+The report is colored so as to attract attention to the repos that likely
 need it most:
 - Untracked files in bold red: Untracked files are never good, they should either
   be in the gitignore or not be there.
@@ -56,29 +57,33 @@ repos:
     path: "/path/to/b-repo"
 #+end_src
 
-If the ~-generate-config~ is passed, instead of printing the report, ~repos~
-will look for git repositories in ~$PWD~ and print on STDOUT the contents of the
-corresponding ~$HOME/.config/repos.yml~ file.
+See =man repos-find= for a tool on how to generate this configuration file.
 
-#+begin_src yaml
-cd ${somewhere}
-repos -generate-config > ~/.config/repos.yml
-cd ${somewhere_else}
-repos -generate-config >> ~/.config/repos.yml
-#+end_src
+Each individual item under the toplevel key =repos= must have a =path= and
+may have the following attributes:
 
-The config file is meant to prioritize ease of editing by humans.  Rather than
-managing the config file fully automatically, we give the human pieces that they
-can use to manage their config file.
+- =ignore: [true|false]=: Don't show repos if the only thing that needs
+  attention is that they are behind the remote.  This is useful actively
+  developed open-source repos that we have no intention of working on.
 
-
+Run =repos ignore --name NAME= to add this flag to a repo or =repos ignore=
+while inside that repo.
 
 * OPTIONS
 
-** ~-generate-config~
+** ~-j NJOBS~
 
-Looks in ~$PWD~ for git repositories and outputs the content of a ~repos.yml~
-file ~STDOUT~.
+Use up to ~NJOBS~ concurrent processes to assess the status of the git
+repositories.  Because =git fetch=, which is mostly IO, is run for each
+repo, an important speed increase is gained by having a high number of jobs.
+
+** ~-no-ignore~
+
+Disregard the ignore attribute for repos.
+
+** ~-all~
+
+Show all repos even if they have nothing that requires attention.
 
 ** ~-no-fetch~
 
@@ -86,11 +91,6 @@ Skips the fetching step.  This is useful if you have separate repos config file
 that has repos of other people on a shared filesystem for which running git fetch
 would cause permission denied errors.
 
-** ~-j NJOBS~
-
-Use up to ~NJOBS~ concurrent processes to assess the status of the git
-repositories.  Because =git fetch=, which is mostly IO, is run for each
-repo, an important speed increase is gained by having a high number of jobs.
 
 ** ~-recent~
 
@@ -103,13 +103,19 @@ condensed report of recent activity.  See =man git-recent= for more info.
 Only useful with the ~-recent~ flag.  Go more than one day before yesterday in
 the commit history.
 
+** ~-generate-config~
+
+Use =repos find= instead.  It is much more powerful.
+
 * BUGS
 
 The accompanying script =repos_completion.bash= defines autocomplete and the
 ~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
 ~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
 
-* SEE ALSO 
+* SEE ALSO
+
 rcd, repo-finder
+
 * AUTHOR
 Philippe Carphin

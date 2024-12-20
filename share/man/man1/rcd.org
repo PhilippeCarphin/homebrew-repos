@@ -8,24 +8,31 @@ rcd - cd to to the path of a repo by its name in repos config file.
 
 #+begin_src shell
 rcd REPO
+rcd REPO/SUBDIR
 #+end_src
 
-Change to the path associated to ~REPO~ in ~$HOME/.config/repos.yml~.  This
-function has autocompletion.
+* DESCRIPTION
+
+Change directory (=cd=) to the path associated to ~REPO~ in
+~$HOME/.config/repos.yml~.  If a =SUBDIR= is specified, then change to that
+directory within the path of the repo.
 
 See ~man (1) repos~ for more information about the ~repos~ command and the
 ~repos.yml~ configuration file.
 
-* BUGS
-The accompanying script =repos_completion.bash= defines autocomplete and the
-~rcd~ that takes a repo name.  It uses the ~repos~ executable.  If there is no
-~$HOME/.config/repos.yml~, the ~rcd~ shell function will not work.
+The autocompletion for this function autocompletes with repo names, then if a
+=/= is present and the token before the first =/= is a valid repo name,
+autocompletion completes with subdirectories of the path associated with that
+repo name.
+
+* CAVEATS
+
+No error message is printed if there is no =~/.config/repos.yml=.
 
 * SEE ALSO
 repos, repo-finder, git-recent
 * AUTHOR
 Philippe Carphin
-
 
 * COPYRIGHT
 Philippe Carphin

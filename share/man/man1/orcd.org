@@ -1,0 +1,41 @@
+#+TITLE: orcd
+
+* NAME
+
+orcd - cd to to the path of a repo by its name in alternate repos config files.
+
+* SYNOPSIS
+
+#+begin_src shell
+orcd NAME REPO
+orcd NAME REPO/SUBDIR
+#+end_src
+
+* DESCRIPTION
+
+This function is like =rcd= but with an alternate config file specified by
+=NAME=.
+
+This is used to have other sets of repos perhaps those of colleagues on a
+shared filesystem.
+
+The alternate config file is =~/.config/repos/${NAME}.yml=.
+
+This function has autocomplete similar to =rcd= except that for the first
+argument, it proposes the names of files without =.yml= of files in
+=~/.config/repos/=.
+
+The second argument is comleted the same way as the first argument of =rcd=.
+
+Use something like
+#+begin_src
+repos find -F ~/.config/repos/dan.yml --merge --cleanup DIR_WHERE_DAN_PUTS_HIS_REPOS
+#+end_src
+
+* SEE ALSO
+repos, rcd, repo-find
+* AUTHOR
+Philippe Carphin
+
+* COPYRIGHT
+Philippe Carphin

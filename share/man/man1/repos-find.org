@@ -2,11 +2,15 @@
 
 * NAME
 
-repo-finder - find git repositories and generate output for repos config file
+repo-find - find git repositories and generate output for repos config file
 
 * SYNOPSIS
 
-repos-finder [--recursive] [--merge] [-F CONFIG_FILE] [DIRS...]
+#+begin_src
+repos-find [-F CONFIG_FILE] [--cleanup] [--recursive] [--merge]
+           [--exclude PATTERN] [--include PATTERN]
+           [DIRS...]
+#+end_src
 
 * DESCRIPTION
 
@@ -14,29 +18,72 @@ Tool to help generate the config file for the repos tool.
 
 The tool searches for git repos inside DIRS or in PWD if no DIRS are specified.
 
-The tool's default behavior is to output text that can be put in the user's
-config file however if the =--merge= option is specified, the tool will automatically
-merge the found repos with the ones in the user's config file.
+* OPTIONS
+
+** ~-F CONFIG FILE~
+
+Specify an alternate config file (the default is =~/.config/repos.yml=).
+
+** ~--merge~
+
+Add found repos to config file.  The tool's default behavior is to output
+text to =STDOUT= that can be put in the user's config file however if the
+=--merge= option is specified, the tool will automatically merge the found
+repos with the ones in the user's config file.
+
+** ~--cleanup~
+
+When using the ~--merge~ option, while the config file is open, it will be
+scanned and any repos whose path does not exist will be removed.
 
 With the =--cleanup= option, the tool will also check if the path of each repo
 exists and if it does not, that repo will be removed from the config file.
 
-The =--exclude= and =--include= options can be used to exclude certain patterns
-from search.  This option was added in case a cycle of links is encountered.  On
-the author's Mac, =~/Library/Application Support/Steam= has a cycle of links.
+** ~--recursive~
+
+Search =DIRS= recursively.  Use =--exclude= or =--include= options to control
+what directories are searched.
+
+** ~--exclude PATTERN~
+
+Exclude directories whose basename *contains* =PATTERN=.
+
+The ~--exclude~ option is useful to avoid recursing into large directories
+and also to avoid cycles of links (for example =~/Library/Application Support/Steam=
+on the author's Mac).  If the command seems like it is hanging, retry it with
+the ~--debug~ option to see if it gets stuck inside some directory and use
+~--exclude~ to avoid that directory.
+
+** ~--include PATTERN~
+
+Include *only* directories whose basename *contains* =PATTERN=.
+
+The options =--include INC_PATTERN= and =--exclude EXC_PATTERN= can be used
+together and if they are, directories that contain =INC_PATTERN= will be
+searched even if the contain =EXC_PATTERN=
+
+The logic is to search a directory if =A= or =B= is true:
+- A: it doesn't contain =EXC_PATTERN=
+- B: it does contain =INC_PATTERN=.
 
 * EXAMPLES
 
 If all your repos are kept directly side 3 directories, the following command will refresh
 the repos config file.
 #+begin_src
-repos-finder --merge --cleanup DIR1 DIR2 DIR3
+repos-find --merge --cleanup DIR1 DIR2 DIR3
 #+end_src
 
 If all your repos are inside one directory, then this command will find all of
-them.
+them and remove any entries for repos that no longer exist.
 #+begin_src
-repos-finder --merge --cleanup --recursive DIR1
+repos-find --merge --cleanup --recursive DIR1
+#+end_src
+
+Search all repos in =DIR= recursively but don't recurse into directories that
+contain the words =data= or =big_files=.
+#+begin_src
+repos-find --exclude "data|big_files" --recursive DIR1
 #+end_src
 
 * AUTHORS
