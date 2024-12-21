@@ -5,6 +5,9 @@ import argparse
 import os
 import subprocess
 import shutil
+import logging
+import pathlib
+
 import _repos_logging
 
 logger = _repos_logging.logger
@@ -17,18 +20,21 @@ would be willing to rm -rf the repo."""
 def get_args():
     p = argparse.ArgumentParser(description=DESCRIPTION)
     p.add_argument("-F", help="Specify alternate file to ~/.config/repos.yml")
-    p.add_argument("repo", help="Specify the repository, defaults to $PWD", nargs='?')
+    p.add_argument("--path", help="Specify the repository, defaults to $PWD", nargs='?')
     p.add_argument("--name", help="Specify name for repo in config file")
+    p.add_argument("--debug", action='store_true')
 
     args = p.parse_args()
 
-    if not args.repo:
-        args.repo = os.environ['PWD']
-
-    if not args.name:
-        args.name = os.path.basename(args.repo)
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
 
     return args
+
+def find_repo_by_path(repos, path):
+    for name, repo in repos.items():
+        if repo['path'] == path:
+            return name, repo
 
 def main():
     args = get_args()
@@ -36,22 +42,48 @@ def main():
     with open(repo_file) as y:
         d = yaml.safe_load(y)
 
-    repo = d['repos'].get(args.name)
+    repos = d['repos']
+    if not args.name:
+        if not args.path:
+            name, repo = find_repo_by_path(repos, os.environ['PWD']) or find_repo_by_path(repos, os.getcwd())
+        else:
+            name, repo = find_repo_by_path(args.path) or find_repo_by_path(os.path.realpath(args.path))
+        args.name = name
+    else:
+        repo = repos.get(args.name)
+
     if repo is None:
         logger.error(f"No such repo '{args.name}'")
         return 1
 
-    path = repo['path']
-    logger.info(f"Repo '{args.name}' at path '{path}'")
+    logger.info(f"Repo '{args.name}' at path '{repo['path']}'")
 
     try:
         if not can_erase(repo):
+            logger.info("Refusing to delete.  If you are sure, you can 'rm -rf' it yourself then remove the entry in the config file with `repos del --name NAME`")
             return 1
         resp = input("Are you sure you want to delete this repo? [yes|no] > ")
         if resp.lower() != 'yes':
             return 0
-        shutil.rmtree(path)
-        logger.info(f"Repo '{path}' deleted")
+        shutil.rmtree(repo['path'])
+        logger.info(f"Repo '{repo['path']}' deleted")
+        # TODO: If repo-dir-scheme is URL and repo path is inside repo-dir,
+        #       remove all empty directories up-to but excluding repo-dir.
+        if 'repo-dir' in d['config']:
+            logger.debug("Repo dir exists in config")
+            path = pathlib.Path(os.path.realpath(repo['path']))
+            repo_dir = pathlib.Path(os.path.realpath(d['config']['repo-dir']))
+            logger.debug(f"Path of repo relative to repo-dir: {path.relative_to(repo_dir)}")
+            for p in path.parents:
+                if p == repo_dir:
+                    break
+                logger.debug(f"Doing p={p}")
+                try:
+                    p.rmdir()
+                except OSError as e:
+                    logger.debug(f"Error: p={p}: {e}")
+                    break
+
     except FileNotFoundError as e:
         logger.info(f"Repo not found: {e}")
 

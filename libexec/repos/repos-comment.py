@@ -7,7 +7,7 @@ import logging
 import _repos_logging
 import _repos_base
 
-logger = _repos_logging.get_repos_logger()
+logger = _repos_logging.logger
 
 def get_args():
     p = argparse.ArgumentParser(description="Set the ignore flag of a repo to true")
