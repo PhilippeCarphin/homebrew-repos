@@ -20,29 +20,42 @@
 __complete_repos() {
 
 	COMPREPLY=()
+    # As it is, this assumes that the subcommand can only be the fist argument
+    # of the repos command.  This is not enforced but it makes no sense to
+    # specify options to repos before the subcommand except for `-F CONFIG_FILE`
+    # but since this is not super likely.  If I really want to, I can do like
+    # git_completion.bash to look through the words and find the subcommand that
+    # way.  It is at the start of the function `__git_main`.
+
+    local c=1
+    local w=""
+    local subcommand
+    while (( c < COMP_CWORD )) ; do
+        w=${COMP_WORDS[c]}
+        case $w in
+            -F) ((c++)) ;; # skip -F CONFIG_FILE
+            -*) ;;
+            *) subcommand="${w}" ; break ;;
+        esac
+        ((c++))
+    done
 
 	# We use the current word to filter out suggestions
 	local cur="${COMP_WORDS[COMP_CWORD]}"
-    local candidates=""
-     __suggest_repos_candidates
 
-	# Compgen: takes the list of candidates and selects those matching ${cur}.
-	# Once COMPREPLY is set, the shell does the rest.
-	COMPREPLY=( $(compgen -W "${candidates}" -- ${cur}))
+    case "${subcommand}" in
+        find) _repos_find ; return ;;
+        ignore) _repos_ignore ; return ;;
+        del|add|ignore) _repos_del ; return ;;
+        comment) _repos_comment ; return ;;
+        clone) _repos_clone ; return ;;
+        "") COMPREPLY+=( $(compgen -W "find ignore del add ignore comment clone" -- "${cur}" ));;
+        *) printf "\n${FUNCNAME[0]}: unknown subcommand '%s'\n%s" "${subcommand}" "${PS1@P}${COMP_LINE}"
+    esac
 
-	return 0
-}
-
-__suggest_repos_candidates(){
-	# We use the current word to decide what to do
-	local cur="${COMP_WORDS[COMP_CWORD]}"
 	if __repos_dash_dash_in_words ; then
 		return
 	fi
-
-    if (( COMP_CWORD == 1)) ; then
-        __suggest_repos_subcommands
-    fi
 
 	option=$(__repos_get_current_option)
 	if __repos_option_has_arg "$option" ; then
@@ -50,20 +63,18 @@ __suggest_repos_candidates(){
 	elif [[ "${cur}" == -* ]] ; then
 		__suggest_repos_options
 	fi
+
+	return 0
 }
 
 __repos_dash_dash_in_words(){
-	for ((i=0;i<COMP_CWORD-1;i++)) ; do
-		w=${COMP_WORD[$i]}
+	for ((i=0;i<COMP_CWORD;i++)) ; do
+		w=${COMP_WORDS[$i]}
 		if [[ "$w" == "--" ]] ; then
 			return 0
 		fi
 	done
 	return 1
-}
-
-__suggest_repos_subcommands(){
-    candidates+=" find add del comment"
 }
 
 __repos_get_current_option(){
@@ -100,30 +111,30 @@ __suggest_repos_args_for_option(){
 }
 
 __suggest_repos_key_generate_config_values(){
-	candidates=""
+    COMPREPLY+=()
 }
 
 __suggest_repos_key_j_values(){
-	candidates=""
+    printf "\n%s\n%s%s" "Nproc=$(nproc)" "${PS1@P}" "${COMP_LINE}"
 }
 
 __suggest_repos_key_list_names_values(){
-	candidates=""
+    COMPREPLY+=()
 }
 
 __suggest_repos_key_no_fetch_values(){
-	candidates=""
+    COMPREPLY+=()
 }
 
 __suggest_repos_key_path_values(){
-	candidates=""
+    COMPREPLY+=()
 }
 
 __suggest_repos_key_r_values(){
-    candidates="$(repos -list-names 2>/dev/null)"
+    COMPREPLY+=( compgen -W "$(repos -list-names 2>/dev/null)" -- "${cur}" )
 }
 
-complete -o default -F __complete_repos repos
+complete -F __complete_repos repos
 
 function expand_repo_dir(){
 
@@ -170,7 +181,6 @@ See 'man rcd' or '${FUNCNAME[0]} --help' for more information."
         printf "\033[33mcd $dir\033[0m\n"
     fi
     cd $dir
-
 }
 
 function rvi(){
@@ -446,7 +456,7 @@ _repo-ignore(){
     fi
 }
 
-_repo-del(){
+_repos_del(){
     local prev=${COMP_WORDS[${COMP_CWORD}-1]}
     local cur=${COMP_WORDS[${COMP_CWORD}]}
     if [[ "${prev}" == "--name" ]] ; then
@@ -454,6 +464,85 @@ _repo-del(){
     else
         COMPREPLY=( $(compgen -W "--name -F" -- ${cur}))
     fi
+}
+_repos_comment(){
+    local prev=${COMP_WORDS[${COMP_CWORD}-1]}
+    local cur=${COMP_WORDS[${COMP_CWORD}]}
+    case "${prev}" in
+        name) COMPREPLY=( $(compgen -W "$(repos -list-names 2>/dev/null)" -- "${cur}") ) ; return ;;
+        comment) return ;;
+        -F) _filedir ; return ;;
+    esac
+    COMPREPLY=( $(compgen -W "--get --set --clear --name -F -h --help" -- "${cur}"))
+}
+_repos_find(){
+    local prev=${COMP_WORDS[${COMP_CWORD}-1]}
+    local cur=${COMP_WORDS[${COMP_CWORD}]}
+    if [[ "${prev}" == "-F" ]] ; then
+        _filedir
+        return
+    fi
+    if ! __repos_dash_dash_in_words ; then
+        COMPREPLY=( $(compgen -W " --exclude --include --merge --recursive --debug -F" -- "${cur}") )
+    fi
+    _filedir
+}
+
+_repos_get_domains(){
+    local f=~/.config/repos.yml
+    if ! [[ -f $f ]] ; then
+        return 1
+    fi
+    python3 -c "import yaml; print('\n'.join(yaml.safe_load(open('$f'))['config']['domains'].keys()))"
+}
+_repos_get_domain_users(){
+    local f=~/.config/repos.yml
+    if ! [[ -f $f ]] ; then
+        return 1
+    fi
+    python3 -c "import yaml; print('\n'.join(yaml.safe_load(open('$f'))['config']['domains']['$1']))"
+}
+_repos_complete_url(){
+
+    local url=$1
+    local x user domain
+    case ${url} in
+        git@*:*/*|https://*/*/) return ;;
+        git@*:*)
+            x=${url#git@} ; domain=${x%%:*} ; user=${x##*:}
+            COMPREPLY+=( $(compgen -S / -W "$(_repos_get_domain_users ${domain})" -- "${user}") )
+            ;;
+        git@*)
+            x=${url#git@} ; domain=${x%%:*}
+            COMPREPLY+=( $(compgen -P "git@" -S : -W "$(_repos_get_domains)" -- "${domain}") )
+            ;;
+        https://*/*)
+            x=${url#https://} ; user=${x##*/} ; domain=${x%%/${user}}
+            COMPREPLY+=( $(compgen -P "https://${domain}/" -S / -W "$(_repos_get_domain_users ${domain})" -- "${user}") )
+            ;;
+        https://*)
+            x=${url#https://} ; domain=${x%%:*}
+            COMPREPLY+=( $(compgen -P "https://" -S / -W "$(_repos_get_domains)" -- "${domain}") )
+            ;;
+        *)
+            COMPREPLY+=( $(compgen -W "https:// git@" -- "${url}") )
+            ;;
+    esac
+}
+
+_repos_clone(){
+    local prev=${COMP_WORDS[${COMP_CWORD}-1]}
+    local cur=${COMP_WORDS[${COMP_CWORD}]}
+    if [[ "${prev}" == "-F" ]] ; then
+        _filedir
+        return
+    fi
+
+    local words cword
+    __reassemble_comp_words_by_ref : words cword
+    compopt -o nospace
+    compopt +o default
+    _repos_complete_url ${words[cword]}
 }
 
 complete -F _repo-del repo-del
