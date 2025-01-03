@@ -493,14 +493,36 @@ _repos_get_domains(){
     if ! [[ -f $f ]] ; then
         return 1
     fi
-    python3 -c "import yaml; print('\n'.join(yaml.safe_load(open('$f'))['config']['domains'].keys()))"
+
+    python3 -c "
+import yaml
+with open('$f') as f:
+    conf = yaml.safe_load(f)['config']
+print('\n'.join(conf['domains'].keys()))
+if 'repo-dir-scheme' in conf and conf['repo-dir-scheme'] == 'url':
+    import os
+    if 'repo-dir' in conf and os.path.isdir(conf['repo-dir']):
+        print('\n'.join(os.listdir(conf['repo-dir'])))
+"
 }
 _repos_get_domain_users(){
     local f=~/.config/repos.yml
     if ! [[ -f $f ]] ; then
         return 1
     fi
-    python3 -c "import yaml; print('\n'.join(yaml.safe_load(open('$f'))['config']['domains']['$1']))"
+
+    python3 -c "
+import yaml
+with open('$f') as f:
+    conf = yaml.safe_load(f)['config']
+print('\n'.join(conf['domains']['$1']))
+if 'repo-dir-scheme' in conf and conf['repo-dir-scheme'] == 'url':
+    import os
+    if 'repo-dir' in conf and os.path.isdir(conf['repo-dir']):
+        d = os.path.join(conf['repo-dir'],'$1')
+        if os.path.isdir(d):
+            print('\n'.join(os.listdir(d)))
+"
 }
 _repos_complete_url(){
 
