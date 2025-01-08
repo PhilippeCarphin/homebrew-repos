@@ -38,7 +38,7 @@ def get_args():
 class DirectoryCreator:
     def __init__(self, path):
         logger.debug(f"Creating DirectoryCreator({path})")
-        self.path = pathlib.Path(path)
+        self.path = pathlib.Path(path) if path else None
         self.created = []
         self.preexisting = None
     def create_one(self, p):
@@ -79,6 +79,13 @@ class DirectoryCreator:
                 logger.debug(f"Removing directory '{p}'")
                 p.rmdir()
 
+    def __enter__(self):
+        if self.path:
+            self.create()
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if self.path and exc_value is not None:
+            self.undo()
+
 def main():
     args, clone_args = get_args()
     print(f"args={args}")
@@ -103,33 +110,34 @@ def main():
                              # clone_args and the basename of the URL
                              # We would have to parse clone args and that would
                              # be too complicated
-            dest_creator = None
+            dest_creator = DirectoryCreator(None)
         else:
             repo_dest = get_repo_dest(args, repo_dict)
             clone_command = ["git", "clone", args.url, repo_dest, *clone_args]
             try:
-                dest_creator = DirectoryCreator(repo_dest)
+                dest_creator = DirectoryCreator(os.path.dirname(repo_dest))
                 dest_creator.create()
                 os.makedirs(os.path.dirname(repo_dest), exist_ok=True)
             except OSError as e:
                 logger.error(f"Could not create container directory: {e}")
                 return 1
 
-    logger.debug(f"Clone command = {clone_command}")
-    result = subprocess.run(clone_command)
-    if result.returncode != 0:
-        logger.error(f"repos-clone: failed to clone '{args.url}'")
-        if dest_creator:
-            dest_creator.undo()
-        return 1
-    if repo_dest:
-        if args.name:
-            result = subprocess.run(["repos", "add", repo_dest, "--name", args.name])
-        else:
-            result = subprocess.run(["repos", "add", repo_dest])
+    with dest_creator:
+        logger.debug(f"Clone command = {clone_command}")
+        result = subprocess.run(clone_command)
         if result.returncode != 0:
-            logger.error(f"failed to adding repo")
+            logger.error(f"repos-clone: failed to clone '{args.url}'")
+            if dest_creator:
+                dest_creator.undo()
             return 1
+        if repo_dest:
+            if args.name:
+                result = subprocess.run(["repos", "add", repo_dest, "--name", args.name])
+            else:
+                result = subprocess.run(["repos", "add", repo_dest])
+            if result.returncode != 0:
+                logger.error(f"failed to adding repo")
+                return 1
 
 def get_repo_dest(args, repo_dict):
 
@@ -175,3 +183,5 @@ if __name__ == "__main__":
     except RepoError as e:
         logger.error(e)
         sys.exit(1)
+    except KeyboardInterrupt as e:
+        sys.exit(130)
