@@ -561,7 +561,11 @@ _repos_clone(){
     fi
 
     local words cword
-    __reassemble_comp_words_by_ref : words cword
+    if declare -f _comp__reassemble_words >/dev/null ; then
+        _comp__reassemble_words : words cword
+    else
+        __reassemble_comp_words_by_ref : words cword
+    fi
     compopt -o nospace
     compopt +o default
     _repos_complete_url ${words[cword]}
