@@ -5,7 +5,7 @@ class Repos < Formula
   desc ""
   homepage ""
   url "https://gitlab.com/philippecarphin/repos.git"
-  version "0.1.0"
+  version "1.6.0"
   sha256 ""
   license ""
 
